@@ -63,9 +63,13 @@ cross_validate <- function(scale_result   = NULL,
 
   # -- Resolve training data -------------------------------------------------
   if (!is.null(scale_result)) {
-    train_data <- scale_result$train_scaled
+    train_data   <- scale_result$train   # unscaled -- scaler re-fitted per fold
+    scale_method <- scale_result$method
+    scale_cols   <- scale_result$cols
   } else if (!is.null(train)) {
-    train_data <- train
+    train_data   <- train
+    scale_method <- NULL
+    scale_cols   <- NULL
   } else {
     rlang::abort("Supply either `scale_result` or `train`.")
   }
@@ -146,6 +150,16 @@ cross_validate <- function(scale_result   = NULL,
     }
 
     fold_val <- fold_data[val_idx, , drop = FALSE]
+
+    # -- Re-fit scaler on fold_train, apply to fold_val --------------------
+    if (!is.null(scale_method) && !is.null(scale_cols)) {
+      num_cols       <- intersect(scale_cols, names(fold_train))
+      fold_params    <- .fit_scaler(fold_train[, num_cols, drop = FALSE], scale_method)
+      fold_train[, num_cols] <- .apply_scaler(fold_train[, num_cols, drop = FALSE],
+                                              fold_params, scale_method)
+      fold_val[, num_cols]   <- .apply_scaler(fold_val[, num_cols, drop = FALSE],
+                                              fold_params, scale_method)
+    }
 
     metrics <- tryCatch(
       as.list(model_fn(fold_train, fold_val)),

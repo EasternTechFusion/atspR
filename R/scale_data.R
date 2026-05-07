@@ -27,14 +27,18 @@
 }
 
 # -- Internal: auto-select scaling method -------------------------------------
-.auto_select_method <- function(df, outlier_threshold = 0.05) {
-  ratios   <- vapply(df, .outlier_ratio, numeric(1))
-  avg_ratio <- mean(ratios)
+.auto_select_method <- function(df) {
+  ratios       <- vapply(df, .outlier_ratio, numeric(1))
+  flagged_cols <- names(ratios[ratios > 0])
+  has_outlier  <- length(flagged_cols) > 0
 
-  if (avg_ratio >= outlier_threshold) {
-    list(method = "robust",
-         reason = sprintf("outliers detected (avg %.1f%% per column) -> robust",
-                          avg_ratio * 100))
+  if (has_outlier) {
+    reason <- sprintf(
+      "outlier detected in %d column(s) [%s] -> robust",
+      length(flagged_cols),
+      paste(flagged_cols, collapse = ", ")
+    )
+    list(method = "robust", reason = reason)
   } else {
     normals <- vapply(df, .is_normal, logical(1))
     if (mean(normals) >= 0.5) {
@@ -53,19 +57,17 @@
 #' to both train and test sets, preventing data leakage.
 #'
 #' When `method = "auto"` (default), the scaling method is chosen
-#' automatically based on outlier detection (IQR method) and a normality
-#' test (Shapiro-Wilk):
+#' automatically based on per-column outlier detection (IQR method) and a
+#' normality test (Shapiro-Wilk):
 #' \itemize{
-#'   \item **robust**  -- outliers detected in >= 5% of values per column
-#'   \item **zscore**  -- no outliers + data approximately normal
-#'   \item **minmax**  -- no outliers + data not normal
+#'   \item **robust**  -- \emph{any} outlier found in any column (IQR fence)
+#'   \item **zscore**  -- no outliers + majority of columns approximately normal
+#'   \item **minmax**  -- no outliers + majority of columns not normal
 #' }
 #'
 #' @param split_result The list returned by [split_data()].
 #' @param method Character. One of `"auto"` (default), `"minmax"`,
 #'   `"zscore"`, or `"robust"`. Use `"auto"` to let the function choose.
-#' @param outlier_threshold Numeric in (0, 1). Fraction of outliers per
-#'   column above which `"robust"` is selected. Default `0.05` (5%).
 #' @param cols Character vector. Names of numeric columns to scale.
 #'   `NULL` (default) scales all numeric columns.
 #' @param verbose Logical (default `TRUE`).
@@ -98,10 +100,9 @@
 #'
 #' @export
 scale_data <- function(split_result,
-                       method             = "auto",
-                       outlier_threshold  = 0.05,
-                       cols               = NULL,
-                       verbose            = TRUE) {
+                       method   = "auto",
+                       cols     = NULL,
+                       verbose  = TRUE) {
 
   train <- split_result$train
   test  <- split_result$test
@@ -124,7 +125,7 @@ scale_data <- function(split_result,
   outlier_ratio <- vapply(train_num, .outlier_ratio, numeric(1))
 
   if (method == "auto") {
-    auto          <- .auto_select_method(train_num, outlier_threshold)
+    auto          <- .auto_select_method(train_num)
     method        <- auto$method
     method_reason <- auto$reason
   }
@@ -141,8 +142,7 @@ scale_data <- function(split_result,
 
   # -- Console output --------------------------------------------------------
   if (verbose) {
-    has_outlier <- outlier_ratio[outlier_ratio > 0]
-    avg_outlier <- mean(outlier_ratio) * 100
+    cols_with_outlier  <- names(outlier_ratio[outlier_ratio > 0])
 
     .header(paste0("STEP 7/7 : Feature Scaling  [", toupper(method), "]"))
     if (!is.null(method_reason))
@@ -151,9 +151,10 @@ scale_data <- function(split_result,
                 length(cols),
                 if (length(cols) <= 4) paste(cols, collapse = ", ")
                 else paste(c(cols[1:3], "..."), collapse = ", ")))
-    cat(sprintf("  Fitted on TRAIN only  |  Avg outlier: %.1f%%\n\n", avg_outlier))
+    cat(sprintf("  Fitted on TRAIN only  |  Columns with outliers: %d / %d\n\n",
+                length(cols_with_outlier), length(cols)))
 
-    if (length(has_outlier) > 0) {
+    if (length(cols_with_outlier) > 0) {
       out_df <- data.frame(
         column      = names(outlier_ratio),
         outlier_pct = outlier_ratio * 100,
@@ -164,10 +165,13 @@ scale_data <- function(split_result,
       show_df <- out_df[out_df$outlier_pct != "0.00%", , drop = FALSE]
       .subheader("Outlier ratio per column  (IQR)")
       print(show_df, row.names = FALSE)
-      high_out_cols <- names(outlier_ratio[outlier_ratio >= 0.10])
-      if (length(high_out_cols) > 0 && method != "robust")
-        cat(sprintf("\n  [!] %s >= 10%% outliers -- consider scale_method = \"robust\"\n",
-                    paste(high_out_cols, collapse = ", ")))
+      if (method == "robust") {
+        cat(sprintf("\n  [OK] Outliers found in [%s] -> robust scaling applied\n",
+                    paste(cols_with_outlier, collapse = ", ")))
+      } else {
+        cat(sprintf("\n  [!] Outliers found in [%s] but method = \"%s\" was forced\n      -> set method = \"auto\" or \"robust\" to handle outliers correctly\n",
+                    paste(cols_with_outlier, collapse = ", "), method))
+      }
       cat("\n")
     } else {
       cat("  [OK] No outliers detected\n\n")
@@ -175,6 +179,8 @@ scale_data <- function(split_result,
   }
 
   invisible(list(
+    train         = train,
+    test          = test,
     train_scaled  = train_scaled,
     test_scaled   = test_scaled,
     params        = params,

@@ -11,7 +11,8 @@ ts_preprocess(
   min_success_rate = 0.8,
   train_ratio = 0.8,
   impute_method = "linear",
-  scale_method = "minmax",
+  impute_tail_n = 10L,
+  scale_method = "auto",
   target_col = NULL,
   k_folds = 5L,
   model_fn = NULL,
@@ -70,11 +71,13 @@ An invisible list with elements:
 Executes all pipeline steps in order:
 \enumerate{
 \item \code{\link[=standardize_na]{standardize_na()}}  - convert custom missing indicators to NA
-\item \code{\link[=missing_analysis]{missing_analysis()}} - assess missing values & draw boxplots
-\item \code{\link[=handle_missing]{handle_missing()}}   - drop rows or impute
+\item \code{\link[=coerce_numeric]{coerce_numeric()}}  - auto-convert character cols to numeric
+\item \code{\link[=fill_time_gaps]{fill_time_gaps()}}  - insert missing timestamps (optional)
+\item \code{\link[=split_data]{split_data()}}      - temporal train/test split (before imputation)
+\item \code{\link[=missing_analysis]{missing_analysis()}} - assess missing values on train only
+\item \code{\link[=handle_missing]{handle_missing()}}   - impute/drop train; forward-fill test from train tail
 \item \code{\link[=visualize_data]{visualize_data()}}   - scatter plots per variable vs index
-\item \code{\link[=split_data]{split_data()}}       - temporal train/test split
-\item \code{\link[=scale_data]{scale_data()}}       - feature scaling (no leakage)
+\item \code{\link[=scale_data]{scale_data()}}       - feature scaling (fit on train only)
 \item \code{\link[=cross_validate]{cross_validate()}}   - k-fold CV on training set (optional)
 }
 }

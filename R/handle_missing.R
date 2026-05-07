@@ -3,6 +3,75 @@
 # Step 2 - Impute or drop missing values
 # =============================================================================
 
+# -- Internal: KNN fit on train, predict on test (no leakage) ----------------
+# For each numeric column that has NA in `test`:
+#   1. use all train rows where that column is NOT NA as the reference pool
+#   2. compute Euclidean distance between the test row and every train row
+#      using all other numeric columns as features
+#   3. average the k nearest train values -> fill the NA cell
+#
+# Neighbours are drawn exclusively from `train` so no future test values
+# are ever used -- zero leakage.
+.impute_knn_train_fit <- function(test, train, k = 5L) {
+  num_cols <- names(train)[sapply(train, is.numeric)]
+
+  for (col in num_cols) {
+    na_rows <- which(is.na(test[[col]]))
+    if (length(na_rows) == 0) next
+
+    # feature cols = every other numeric col (not the target col)
+    feature_cols <- setdiff(num_cols, col)
+    if (length(feature_cols) == 0) next
+
+    # only train rows where the target col is known
+    train_known <- train[!is.na(train[[col]]), , drop = FALSE]
+    if (nrow(train_known) == 0) next
+
+    train_features <- as.matrix(train_known[, feature_cols, drop = FALSE])
+    train_target   <- train_known[[col]]
+
+    for (i in na_rows) {
+      test_row <- as.numeric(test[i, feature_cols])
+
+      # Euclidean distance to every train row (NA features ignored gracefully)
+      diffs <- sweep(train_features, 2, test_row, "-")
+      dists <- sqrt(rowSums(diffs^2, na.rm = TRUE))
+
+      k_actual     <- min(k, length(dists))
+      k_idx        <- order(dists)[seq_len(k_actual)]
+      test[i, col] <- mean(train_target[k_idx], na.rm = TRUE)
+    }
+  }
+  test
+}
+
+# -- Internal: impute test set (no leakage) ----------------------------------
+# Leakage rules enforced:
+#   - linear : prepend tail(train, tail_n) before test, then forward-fill
+#              (na.locf) only -- na.approx excluded because it interpolates
+#              using future values within test (look-ahead leakage).
+#   - knn    : neighbours drawn from train ONLY via .impute_knn_train_fit.
+#              No test row ever influences another test row.
+.impute_test_with_train_tail <- function(test, train, method = "linear",
+                                         knn_k = 5L, tail_n = 10L) {
+  if (method == "linear") {
+    tail_rows <- tail(train, tail_n)
+    combined  <- rbind(tail_rows, test)
+
+    for (col in names(combined)) {
+      if (any(is.na(combined[[col]])))
+        combined[[col]] <- zoo::na.locf(combined[[col]], na.rm = FALSE)
+    }
+
+    # Return only the test portion
+    tail(combined, nrow(test))
+
+  } else {
+    # KNN: fit on full train, apply to test row-by-row -- zero leakage
+    .impute_knn_train_fit(test, train, k = knn_k)
+  }
+}
+
 #' Handle Missing Values
 #'
 #' Automatically chooses between **imputation** and **row deletion** based on
@@ -73,10 +142,6 @@ handle_missing <- function(analysis_result = NULL,
   n_rows <- nrow(raw_data)
 
   # -- Decision rule ---------------------------------------------------------
-  # n <= 50                              -> always impute (too small to lose rows)
-  # n > 50  and missing > 5%            -> impute
-  # 50 < n < 1000 and missing <= 5%     -> drop
-  # n >= 1000 and missing <= 5%         -> drop
   do_impute <- (n_rows <= 50) || (overall_pct > 0.05)
 
   # -- Reason string for verbose output --------------------------------------
@@ -97,7 +162,7 @@ handle_missing <- function(analysis_result = NULL,
   if (do_impute) {
 
     if (verbose) {
-      .header("STEP 4/7 : Handle Missing Values  [IMPUTE]")
+      .header("STEP 5/9 : Handle Missing Values  [IMPUTE]")
       cat(sprintf("  Method  : %s  |  Missing: %.2f%%\n", toupper(method), overall_pct * 100))
       cat(sprintf("  Reason  : %s\n\n", decision_reason))
     }
@@ -152,7 +217,7 @@ handle_missing <- function(analysis_result = NULL,
     )
 
     if (verbose) {
-      .header("STEP 4/7 : Handle Missing Values  [DROP]")
+      .header("STEP 5/9 : Handle Missing Values  [DROP]")
       cat(sprintf("  Missing : %.2f%%  |  Reason: %s\n\n", overall_pct * 100, decision_reason))
       cat(sprintf("  Rows before : %d  ->  after: %d  (-%d removed)\n\n",
                   rows_before, nrow(data_clean), n_dropped))
@@ -169,7 +234,9 @@ handle_missing <- function(analysis_result = NULL,
   ))
 }
 
-# -- Internal: linear interpolation ------------------------------------------
+# -- Internal: linear interpolation (train only) -----------------------------
+# na.approx is safe here because this runs on train set only --
+# no future test values exist in this data.
 .impute_linear <- function(data, verbose = TRUE) {
   num_cols <- .numeric_cols(data)
   for (col in names(data)) {
@@ -180,7 +247,6 @@ handle_missing <- function(analysis_result = NULL,
         data[[col]] <- zoo::na.locf(data[[col]], na.rm = FALSE)
         data[[col]] <- zoo::na.locf(data[[col]], fromLast = TRUE, na.rm = FALSE)
       } else {
-        # Categorical: forward-fill
         data[[col]] <- zoo::na.locf(data[[col]], na.rm = FALSE)
         data[[col]] <- zoo::na.locf(data[[col]], fromLast = TRUE, na.rm = FALSE)
       }
@@ -190,7 +256,9 @@ handle_missing <- function(analysis_result = NULL,
   data
 }
 
-# -- Internal: KNN imputation ------------------------------------------------
+# -- Internal: KNN imputation (train only) -----------------------------------
+# VIM::kNN is used on train data only -- no leakage risk here.
+# For imputing test data use .impute_knn_train_fit() instead.
 .impute_knn <- function(data, k = 5, verbose = TRUE) {
   if (!requireNamespace("VIM", quietly = TRUE)) {
     rlang::abort(

@@ -4,22 +4,13 @@
 \alias{scale_data}
 \title{Scale Numeric Features (Auto-Select Method)}
 \usage{
-scale_data(
-  split_result,
-  method = "auto",
-  outlier_threshold = 0.05,
-  cols = NULL,
-  verbose = TRUE
-)
+scale_data(split_result, method = "auto", cols = NULL, verbose = TRUE)
 }
 \arguments{
 \item{split_result}{The list returned by \code{\link[=split_data]{split_data()}}.}
 
 \item{method}{Character. One of \code{"auto"} (default), \code{"minmax"},
 \code{"zscore"}, or \code{"robust"}. Use \code{"auto"} to let the function choose.}
-
-\item{outlier_threshold}{Numeric in (0, 1). Fraction of outliers per
-column above which \code{"robust"} is selected. Default \code{0.05} (5\%).}
 
 \item{cols}{Character vector. Names of numeric columns to scale.
 \code{NULL} (default) scales all numeric columns.}
@@ -44,12 +35,12 @@ to both train and test sets, preventing data leakage.
 }
 \details{
 When \code{method = "auto"} (default), the scaling method is chosen
-automatically based on outlier detection (IQR method) and a normality
-test (Shapiro-Wilk):
+automatically based on per-column outlier detection (IQR method) and a
+normality test (Shapiro-Wilk):
 \itemize{
-\item \strong{robust}  -- outliers detected in >= 5\% of values per column
-\item \strong{zscore}  -- no outliers + data approximately normal
-\item \strong{minmax}  -- no outliers + data not normal
+\item \strong{robust}  -- \emph{any} outlier found in any column (IQR fence)
+\item \strong{zscore}  -- no outliers + majority of columns approximately normal
+\item \strong{minmax}  -- no outliers + majority of columns not normal
 }
 }
 \section{Methods}{

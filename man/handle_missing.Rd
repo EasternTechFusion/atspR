@@ -11,14 +11,6 @@ handle_missing(
   knn_k = 5L,
   verbose = TRUE
 )
-
-handle_missing(
-  analysis_result = NULL,
-  data = NULL,
-  method = c("linear", "knn"),
-  knn_k = 5L,
-  verbose = TRUE
-)
 }
 \arguments{
 \item{analysis_result}{The list returned by \code{\link[=missing_analysis]{missing_analysis()}}.
@@ -44,22 +36,8 @@ An invisible list with elements:
 \item{\code{n_imputed}}{Integer.  Number of cells that were imputed.}
 \item{\code{report}}{A short character string summarising the action taken.}
 }
-
-An invisible list with elements:
-\describe{
-\item{\code{data_clean}}{The cleaned \code{data.frame}.}
-\item{\code{action}}{Character: \code{"drop"} or \code{"impute"}.}
-\item{\code{method}}{Imputation method used (or \code{"none"}).}
-\item{\code{imputed_mask}}{Logical \code{data.frame} marking imputed cells
-(same dimensions as \code{data_clean}).  All \code{FALSE} when action is \code{"drop"}.}
-\item{\code{n_imputed}}{Integer.  Number of cells that were imputed.}
-\item{\code{report}}{A short character string summarising the action taken.}
-}
 }
 \description{
-Automatically chooses between \strong{imputation} and \strong{row deletion} based on
-two criteria: dataset size (\code{n}) and overall missing rate.
-
 Automatically chooses between \strong{imputation} and \strong{row deletion} based on
 two criteria: dataset size (\code{n}) and overall missing rate.
 }
@@ -73,23 +51,8 @@ Decision rules:
 
 When imputing, linear interpolation is the default;
 KNN imputation is available as an alternative.
-
-Decision rules:
-\itemize{
-\item \code{n <= 50}                      -> always impute (data too small to lose rows)
-\item \code{n > 50} and \verb{missing > 5\%}   -> impute
-\item \code{n > 50} and \verb{missing <= 5\%}  -> drop rows with NA
-}
-
-When imputing, linear interpolation is the default;
-KNN imputation is available as an alternative.
 }
 \examples{
-data(airquality)
-ana  <- missing_analysis(airquality, plot = FALSE)
-clean <- handle_missing(ana)
-clean$report
-
 data(airquality)
 ana  <- missing_analysis(airquality, plot = FALSE)
 clean <- handle_missing(ana)
