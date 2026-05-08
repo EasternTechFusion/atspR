@@ -1,13 +1,15 @@
 Package: atspR
 Title: Automated Time-Series Preprocessing in R
 Version: 0.1.0
-Authors@R: 
+Authors@R:
     person("Data", "Scientist", email = "ds@example.com", role = c("aut", "cre"))
-Description: An automated preprocessing framework for time-series data providing tools 
-    for missing value analysis, imputation (linear interpolation & KNN), 
-    temporal train/test splitting, feature scaling (Min-Max, Z-score, Robust), 
-    and k-fold cross-validation. Designed for time-series and tabular datasets 
-    with a clean, composable API and rich visual diagnostics.
+Description: An automated preprocessing pipeline for time-series and tabular data.
+    Provides tools for standardising missing indicators, coercing column types,
+    filling temporal gaps, imputing missing values (linear interpolation and KNN
+    fitted on training data only), leakage-free temporal train/test splitting,
+    feature scaling (Min-Max, Z-score, Robust with automatic method selection),
+    k-fold cross-validation, and rich visual diagnostics. All pipeline steps are
+    designed to prevent data leakage between training and test sets.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -15,10 +17,11 @@ RoxygenNote: 7.3.3
 Imports:
     ggplot2 (>= 3.4.0),
     rlang (>= 1.1.0),
-    zoo (>= 1.8.0)
+    zoo (>= 1.8.11),
+    stats,
+    utils
 Suggests:
-    VIM (>= 6.2.0),
-    caret (>= 6.0.0),
+    VIM (>= 6.2.2),
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
