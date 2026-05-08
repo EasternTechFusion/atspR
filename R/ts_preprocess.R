@@ -164,21 +164,21 @@ ts_preprocess <- function(data,
     }
     miss_action <- if (clean_train$action == "drop") "DROP" else paste0("IMPUTE (", toupper(clean_train$method), ")")
 
-    cat(sprintf("  [1/9] Standardise NA indicators  -- done\n\n"))
+    cat(sprintf("  [1/8] Standardise NA indicators  -- done\n\n"))
 
-    cat(sprintf("  [2/9] Coerce character cols to numeric  -- done\n\n"))
+    cat(sprintf("  [2/8] Coerce character cols to numeric  -- done\n\n"))
 
-    cat(sprintf("  [3/9] Train / Test Split  (before imputation)\n"))
+    cat(sprintf("  [3/8] Train / Test Split  (before imputation)\n"))
     cat(sprintf("        Train: %d rows (%.0f%%)  |  Test: %d rows (%.0f%%)\n\n",
                 nrow(sp_raw$train), sp_raw$ratio["train"] * 100,
                 nrow(sp_raw$test),  sp_raw$ratio["test"]  * 100))
 
-    cat(sprintf("  [4/9] Missing Value Analysis  (train only)\n"))
+    cat(sprintf("  [4/8] Missing Value Analysis  (train only)\n"))
     cat(sprintf("        %.2f%%  |  %d / %d cols  |  %s  -- %s\n\n",
                 ana$overall_pct * 100, miss_cols, ncol(sp_raw$train),
                 miss_action, miss_reason))
 
-    cat(sprintf("  [5/9] Handle Missing Values  (train)\n"))
+    cat(sprintf("  [5/8] Handle Missing Values  (train)\n"))
     if (clean_train$action == "drop") {
       cat(sprintf("        %d -> %d rows  (-%d dropped)\n\n",
                   n_train, n_train_clean, n_train - n_train_clean))
@@ -192,16 +192,16 @@ ts_preprocess <- function(data,
       cat("\n\n")
     }
 
-    cat(sprintf("  [6/9] Handle Missing Values  (test -- forward-fill from train tail)\n"))
+    cat(sprintf("  [6/8] Handle Missing Values  (test -- forward-fill from train tail)\n"))
     n_test_na_before <- sum(is.na(sp_raw$test))
     n_test_na_after  <- sum(is.na(test_clean))
     cat(sprintf("        %d NA cells filled  |  tail_n = %d rows used\n\n",
                 n_test_na_before - n_test_na_after, impute_tail_n))
 
-    cat(sprintf("  [7/9] Visualise\n"))
+    cat(sprintf("  [7/8] Visualise\n"))
     cat(sprintf("        %d scatter page(s) generated\n\n", length(viz$scatter_plots)))
 
-    cat(sprintf("  [8/9] Feature Scaling  [%s]\n", toupper(sc$method)))
+    cat(sprintf("  [8/8] Feature Scaling  [%s]\n", toupper(sc$method)))
     if (!is.null(sc$method_reason))
       cat(sprintf("        Auto-selected : %s\n", sc$method_reason))
     n_scaled   <- length(sc$cols)
