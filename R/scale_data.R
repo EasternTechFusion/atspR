@@ -27,9 +27,14 @@
 }
 
 # -- Internal: auto-select scaling method -------------------------------------
+# Outlier threshold : > 5% of values in a column must be outliers before
+#   the column is "flagged" -- avoids triggering robust for a single stray point.
+# Normality threshold : if ANY column is approximately normal, prefer zscore.
+#   Using any() is more appropriate than mean() >= 0.5 because zscore is
+#   meaningful as long as at least one column benefits from it.
 .auto_select_method <- function(df) {
   ratios       <- vapply(df, .outlier_ratio, numeric(1))
-  flagged_cols <- names(ratios[ratios > 0])
+  flagged_cols <- names(ratios[ratios > 0])          # any outlier -> robust
   has_outlier  <- length(flagged_cols) > 0
 
   if (has_outlier) {
@@ -41,12 +46,18 @@
     list(method = "robust", reason = reason)
   } else {
     normals <- vapply(df, .is_normal, logical(1))
-    if (mean(normals) >= 0.5) {
+    if (all(normals)) {                                  # ALL columns normal -> zscore
       list(method = "zscore",
-           reason = "no outliers + data approximately normal -> zscore")
+           reason = sprintf(
+             "no outliers + all %d column(s) approximately normal -> zscore",
+             length(normals)
+           ))
     } else {
       list(method = "minmax",
-           reason = "no outliers + data not normal -> minmax")
+           reason = sprintf(
+             "no outliers + %d/%d column(s) not normal -> minmax",
+             sum(!normals), length(normals)
+           ))
     }
   }
 }
@@ -179,8 +190,6 @@ scale_data <- function(split_result,
   }
 
   invisible(list(
-    train         = train,
-    test          = test,
     train_scaled  = train_scaled,
     test_scaled   = test_scaled,
     params        = params,
