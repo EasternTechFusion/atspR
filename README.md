@@ -119,6 +119,11 @@ result <- ts_preprocess(data         = gap$data,
                         target_col   = "data_target",
                         k_folds      = 5)
 ```
+## Export Results
+
+```r
+ts_export(result, dir = "C:\Users\user\", prefix = "data")
+```
 
 ## Cross-Validation
 
@@ -136,11 +141,6 @@ Fold 3: train = seed + fold1+2    → val = fold3
 ...
 ```
 
-## Export Results
-
-```r
-ts_export(result, dir = "C:\Users\user\", prefix = "data")
-```
 
 ## Citation
 
