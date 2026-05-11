@@ -55,7 +55,7 @@ Raw data
 ```r
 # Install from GitHub
 # install.packages("devtools")
-devtools::install_github("SueppongSP/atspR")
+devtools::install_github("EasternTechFusion/atspR")
 ```
 
 ## Quick Start
