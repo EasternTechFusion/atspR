@@ -78,7 +78,6 @@ gap <- fill_time_gaps(df,
 
 result <- ts_preprocess(data         = gap$data,
                         train_ratio  = 0.8,
-                        scale_method = "minmax",
                         target_col   = "data_target",
                         k_folds      = 5)
 ```
@@ -98,7 +97,6 @@ gap <- fill_time_gaps(df,
                       
 result <- ts_preprocess(data         = gap$data,
                         train_ratio  = 0.8,
-                        scale_method = "minmax",
                         target_col   = "data_target",
                         k_folds      = 5)
 ```
@@ -115,7 +113,6 @@ gap <- fill_time_gaps(df,
                       
 result <- ts_preprocess(data         = gap$data,
                         train_ratio  = 0.8,
-                        scale_method = "minmax",
                         target_col   = "data_target",
                         k_folds      = 5)
 ```
