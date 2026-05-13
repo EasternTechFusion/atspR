@@ -87,7 +87,7 @@ gap <- fill_time_gaps(df,
 
 result <- ts_preprocess(data         = gap$data,
                         train_ratio  = 0.8,
-                        target_col   = "data_target",
+                        target_col   = "VPD",
                         k_folds      = 5)
 ```
 
@@ -116,7 +116,7 @@ gap <- fill_time_gaps(df,
                       
 result <- ts_preprocess(data         = gap$data,
                         train_ratio  = 0.8,
-                        target_col   = "data_target",
+                        target_col   = "VPD",
                         k_folds      = 5)
 ```
 
@@ -143,7 +143,7 @@ gap <- fill_time_gaps(df,
                       
 result <- ts_preprocess(data         = gap$data,
                         train_ratio  = 0.8,
-                        target_col   = "data_target",
+                        target_col   = "VPD",
                         k_folds      = 5)
 ```
 ## Export Results
@@ -172,9 +172,9 @@ Fold 3: train = seed + fold1+2    → val = fold3
 ## Citation
 
 ```
-Yourname (2024). atspR: Automated Time-Series Preprocessing in R.
-R package version 0.1.0.
-https://github.com/example/Automated-Time-Series-Preprocessing-in-R
+Sueppong Mueanchamnong and Pattharaporn Thongnim (2026). atspR: Automated Time-Series Preprocessing in R.
+R package version 1.0.0
+https://github.com/EasternTechFusion/atspR
 ```
 
 ## License
