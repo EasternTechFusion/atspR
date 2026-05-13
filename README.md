@@ -31,10 +31,10 @@ The package is designed for students and domain practitioners (agronomists, envi
 ```
 Raw data
    │
-   ├─ (Stage 1) combine_datetime()      Merge date + time columns → POSIXct
+   ├─ (Stage 1) combine_datetime()      Merge date + time columns → POSIXct (optional)
    ├─ (Stage 2) fill_time_gaps()        Insert placeholder rows for missing timestamps
    │
-   └─ ts_preprocess()               ────────────────── 8 steps ──────────────────
+   └─ ts_preprocess()                   ────────────────── 8 steps ──────────────────
    │    (Stage 3) standardize_na()      Convert sentinel values to NA
    │    (Stage 4) coerce_numeric()      Parse character columns to numeric
    │    (Stage 5) missing_analysis()    Summarise NAs; decide DROP or IMPUTE
@@ -44,7 +44,7 @@ Raw data
    │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
    │    (Stage 10) cross_validate()     Walk-forward k-fold CV (optional)
    │
-   └─ ts_export()                   Write all outputs to CSV
+   └─ ts_export()                       Write all outputs to CSV
 ```
 
 ---
