@@ -37,10 +37,10 @@ Raw data
    └─ ts_preprocess()                   ────────────────── 8 steps ──────────────────
    │    (Stage 3) standardize_na()      Convert sentinel values to NA
    │    (Stage 4) coerce_numeric()      Parse character columns to numeric
-   │    (Stage 5) missing_analysis()    Summarise NAs; decide DROP or IMPUTE
-   │    (Stage 6) handle_missing()      Drop rows or interpolate (linear/KNN)
-   │    (Stage 7) visualize_data()      Scatter plots per variable vs time
-   │    (Stage 8) split_data()          Temporal train/test split
+   │    (Stage 5) split_data()          Temporal train/test split
+   │    (Stage 6) missing_analysis()    Summarise NAs; decide DROP or IMPUTE
+   │    (Stage 7) handle_missing()      Drop rows or interpolate (linear/KNN)
+   │    (Stage 8) visualize_data()      Scatter plots per variable vs time
    │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
    │    (Stage 10) cross_validate()     Walk-forward k-fold CV (optional)
    │
