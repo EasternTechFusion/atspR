@@ -31,19 +31,18 @@ The package is designed for students and domain practitioners (agronomists, envi
 ```
 Raw data
    │
-   ├─ combine_datetime()            Merge date + time columns → POSIXct
-   ├─ fill_time_gaps()              Insert placeholder rows for missing timestamps
+   ├─ (Stage 1) combine_datetime()      Merge date + time columns → POSIXct
+   ├─ (Stage 2) fill_time_gaps()        Insert placeholder rows for missing timestamps
    │
-   └─ ts_preprocess()               ────────────────── 7 steps ──────────────────
-   │    [1/7] standardize_na()      Convert sentinel values to NA
-   │    [2/7] coerce_numeric()      Parse character columns to numeric
-   │    [3/7] missing_analysis()    Summarise NAs; decide DROP or IMPUTE
-   │    [4/7] handle_missing()      Drop rows or interpolate (linear/KNN)
-   │    [5/7] visualize_data()      Scatter plots per variable vs time
-   │    [6/7] split_data()          Temporal train/test split
-   │    [7/7] scale_data()          MinMax / Z-score / Robust (auto)
-   │        │
-   │        └─ cross_validate()     Walk-forward k-fold CV (optional)
+   └─ ts_preprocess()               ────────────────── 8 steps ──────────────────
+   │    (Stage 3) standardize_na()      Convert sentinel values to NA
+   │    (Stage 4) coerce_numeric()      Parse character columns to numeric
+   │    (Stage 5) missing_analysis()    Summarise NAs; decide DROP or IMPUTE
+   │    (Stage 6) handle_missing()      Drop rows or interpolate (linear/KNN)
+   │    (Stage 7) visualize_data()      Scatter plots per variable vs time
+   │    (Stage 8) split_data()          Temporal train/test split
+   │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
+   │    (Stage 10) cross_validate()     Walk-forward k-fold CV (optional)
    │
    └─ ts_export()                   Write all outputs to CSV
 ```
@@ -61,6 +60,16 @@ devtools::install_github("EasternTechFusion/atspR")
 ## Quick Start
 
 ### Case 1: Date + Time in separate columns
+**Sample data**
+
+| Date       | Time  | Temp   | Humid  | Solar   | WindDirection | WindSpeed | RainFall | VPD    |
+|------------|-------|--------|--------|---------|---------------|-----------|----------|--------|
+| 2024-01-01 | 08:00 | 25.12  | 80.04  | 14.0591 | 94.8218       | 0.0000    | 0.0000   | 0.2758 |
+| 2024-01-01 | 09:00 | NA     | 82.38  | 18.3274 | 91.2340       | 0.5200    | 0.0000   | 0.3124 |
+| 2024-01-01 | 11:00 | 26.26  | 85.03  | 22.7810 | 88.6500       | 1.1400    | 0.0000   | 0.3892 |
+| 2024-01-01 | 12:00 | 27.07  | 83.57  | NA      | 90.1200       | 1.3300    | 0.1200   | 0.4015 |
+
+> Hour 10:00 is missing entirely — `fill_time_gaps()` will insert it as a row of `NA`.
 
 ```r
 library(atspR)
@@ -83,6 +92,16 @@ result <- ts_preprocess(data         = gap$data,
 ```
 
 ### Case 2: Datetime in one column
+**Sample data**
+
+| DateTime         | Temp   | Humid  | Solar   | WindDirection | WindSpeed | RainFall | VPD    |
+|------------------|--------|--------|---------|---------------|-----------|----------|--------|
+| 2024-01-01 08:00 | 25.12  | 80.04  | 14.0591 | 94.8218       | 0.0000    | 0.0000   | 0.2758 |
+| 2024-01-01 09:00 | NA     | 82.38  | 18.3274 | 91.2340       | 0.5200    | 0.0000   | 0.3124 |
+| 2024-01-01 11:00 | 26.26  | 85.03  | 22.7810 | 88.6500       | 1.1400    | 0.0000   | 0.3892 |
+| 2024-01-01 12:00 | 27.07  | 83.57  | NA      | 90.1200       | 1.3300    | 0.1200   | 0.4015 |
+
+> Hour 10:00 is missing entirely — `fill_time_gaps()` will insert it as a row of `NA`.
 
 ```r
 library(atspR)
@@ -102,6 +121,17 @@ result <- ts_preprocess(data         = gap$data,
 ```
 
 ### Case 3: Date only (daily data)
+
+**Sample data**
+
+| date       | Temp   | Humid  | Solar   | WindDirection | WindSpeed | RainFall | VPD      |
+|------------|--------|--------|---------|---------------|-----------|----------|----------|
+| 2024-01-01 | 28.38  | 75.04  | 14.0591 | 94.8218       | 0.0000    | 0.0000   | 0.275835 |
+| 2024-01-02 | 29.16  | 72.05  | NA      | 91.2340       | 0.5200    | 0.0000   | 0.312410 |
+| 2024-01-04 | 27.89  | 78.03  | 22.7810 | 88.6500       | 1.1400    | 2.4000   | 0.389200 |
+| 2024-01-05 | 26.50  | 80.54  | 19.4320 | NA            | 0.8800    | 0.0000   | 0.301770 |
+
+> 2024-01-03 is missing entirely — `fill_time_gaps()` will insert it as a row of `NA`.
 
 ```r
 library(atspR)
