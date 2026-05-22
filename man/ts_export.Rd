@@ -9,7 +9,7 @@ ts_export(
   dir = "atspR_output",
   prefix = "atspR",
   export_clean = TRUE,
-  export_report = TRUE,
+  export_report = FALSE,
   verbose = TRUE
 )
 }
@@ -24,7 +24,7 @@ Default \code{"atspR_output"}.}
 \item{export_clean}{Logical. Also export \code{data_clean}. Default \code{TRUE}.}
 
 \item{export_report}{Logical. Also export \code{missing_report} and
-\code{scale_params} as CSV. Default \code{TRUE}.}
+\code{scale_params} as CSV. Default \code{FALSE}.}
 
 \item{verbose}{Logical (default \code{TRUE}).}
 }

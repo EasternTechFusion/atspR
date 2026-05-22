@@ -15,7 +15,7 @@
 #' @param prefix Character. Filename prefix. Default `"atspR"`.
 #' @param export_clean Logical. Also export `data_clean`. Default `TRUE`.
 #' @param export_report Logical. Also export `missing_report` and
-#'   `scale_params` as CSV. Default `TRUE`.
+#'   `scale_params` as CSV. Default `FALSE`.
 #' @param verbose Logical (default `TRUE`).
 #'
 #' @return Invisibly returns a named character vector of exported file paths.
@@ -32,7 +32,7 @@ ts_export <- function(result,
                       dir           = "atspR_output",
                       prefix        = "atspR",
                       export_clean  = TRUE,
-                      export_report = TRUE,
+                      export_report = FALSE,
                       verbose       = TRUE) {
 
   # -- Create directory ------------------------------------------------------
