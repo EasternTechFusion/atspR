@@ -13,7 +13,7 @@ ts_export(
   dir = "atspR_output",
   prefix = "atspR",
   export_clean = TRUE,
-  export_report = TRUE,
+  export_report = FALSE,
   verbose = TRUE
 )
 ```
@@ -41,7 +41,7 @@ ts_export(
 - export_report:
 
   Logical. Also export `missing_report` and `scale_params` as CSV.
-  Default `TRUE`.
+  Default `FALSE`.
 
 - verbose:
 
