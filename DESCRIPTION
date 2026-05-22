@@ -26,6 +26,6 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
-URL: https://github.com/example/Automated-Time-Series-Preprocessing-in-R
+URL: https://github.com/example/Automated-Time-Series-Preprocessing-in-R, https://easterntechfusion.github.io/atspR/
 BugReports: https://github.com/example/Automated-Time-Series-Preprocessing-in-R/issues
 Config/testthat/edition: 3

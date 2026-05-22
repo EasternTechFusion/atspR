@@ -8,3 +8,6 @@
 ^cran-comments\.md$
 ^\.DS_Store$
 ^LICENSE\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
