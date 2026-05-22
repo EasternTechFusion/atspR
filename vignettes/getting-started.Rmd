@@ -19,117 +19,172 @@ library(atspR)
 
 ## Overview
 
-`atspR` (**Automated Time-Series Preprocessing in R**) provides a complete,
-modular preprocessing framework for time-series data — from raw input to
-cross-validated, model-ready datasets.
+`atspR` is an R package that provides an automated, modular preprocessing
+pipeline for time-series data covering the full journey from raw sensor data
+to cross-validated, model-ready train and test sets.
+
+The package is designed for students and domain practitioners (agronomists,
+environmental scientists, irrigation engineers) who work primarily in R and
+need a reliable, leakage-free preprocessing workflow without having to manage
+multiple packages or worry about the correct sequencing of steps.
+
+### Why atspR?
+
+| Problem | How atspR solves it |
+|---|---|
+| Scalers applied before splitting → **data leakage** | Scaler fitted on **TRAIN only**, applied to both sets |
+| Random split invalidates time-series models | **Temporal split** — train always precedes test chronologically |
+| Silent NA removal with no record | Full report of what was dropped or imputed, and why |
+| Multi-package workflow, easy to sequence incorrectly | Single function `ts_preprocess()` runs all 7 steps in order |
+| Error messages with no guidance | Every automated decision explained in plain-language output |
 
 ---
 
 ## Installation
 
 ```r
+# install.packages("devtools")
 devtools::install_github("EasternTechFusion/atspR")
+```
+
+---
+
+## Pipeline
+
+```
+Raw data
+   │
+   ├─ (Stage 1) combine_datetime()      Merge date + time columns → POSIXct (optional)
+   ├─ (Stage 2) fill_time_gaps()        Insert placeholder rows for missing timestamps
+   │
+   └─ ts_preprocess()                   ────────────────── 8 steps ──────────────────
+   │    (Stage 3) standardize_na()      Convert sentinel values to NA
+   │    (Stage 4) coerce_numeric()      Parse character columns to numeric
+   │    (Stage 5) split_data()          Temporal train/test split
+   │    (Stage 6) missing_analysis()    Summarise NAs; decide DROP or IMPUTE
+   │    (Stage 7) handle_missing()      Drop rows or interpolate (linear/KNN)
+   │    (Stage 8) visualize_data()      Scatter plots per variable vs time
+   │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
+   │    (Stage 10) cross_validate()     Walk-forward k-fold CV (optional)
+   │
+   └─ ts_export()                       Write all outputs to CSV
 ```
 
 ---
 
 ## Case 1: Date + Time in separate columns
 
-`combine_datetime()` รองรับ `time_type` 3 แบบ:
+**Sample data**
 
-| `time_type` | ตัวอย่าง | คำอธิบาย |
-|---|---|---|
-| `"hour"` | `8`, `14` | Integer 0–23 |
-| `"hhmm"` | `830`, `1430` | Integer HHMM |
-| `"string"` | `"08:30"` | Character HH:MM |
+| Date | Time | Temp | Humid | Solar | WindDirection | WindSpeed | RainFall | VPD |
+|---|---|---|---|---|---|---|---|---|
+| 2024-01-01 | 08:00 | 25.12 | 80.04 | 14.0591 | 94.8218 | 0.0000 | 0.0000 | 0.2758 |
+| 2024-01-01 | 09:00 | NA | 82.38 | 18.3274 | 91.2340 | 0.5200 | 0.0000 | 0.3124 |
+| 2024-01-01 | 11:00 | 26.26 | 85.03 | 22.7810 | 88.6500 | 1.1400 | 0.0000 | 0.3892 |
+| 2024-01-01 | 12:00 | 27.07 | 83.57 | NA | 90.1200 | 1.3300 | 0.1200 | 0.4015 |
+
+> Hour 10:00 is missing entirely — `fill_time_gaps()` will insert it as a row of `NA`.
 
 ```{r case1, eval=FALSE}
 library(atspR)
 
-# combine date + time columns → POSIXct
 df <- combine_datetime(my_data,
                        date_col  = "Date",
                        time_col  = "Time",
                        new_col   = "datetime",
                        time_type = "string")
 
-# fill missing timestamp rows (e.g. hour 10:00 absent)
 gap <- fill_time_gaps(df,
                       time_col = "datetime",
                       n        = 1,
                       unit     = "hour")
 
-result <- ts_preprocess(
-  data        = gap$data,
-  train_ratio = 0.8,
-  target_col  = "VPD",
-  k_folds     = 5L
-)
+result <- ts_preprocess(data        = gap$data,
+                        train_ratio = 0.8,
+                        target_col  = "VPD",
+                        k_folds     = 5L)
 ```
 
 ---
 
 ## Case 2: Datetime in one column
 
-```{r case2, eval=FALSE}
-df_datetime <- data.frame(
-  datetime = as.POSIXct(
-    c("2024-01-01 08:00:00", "2024-01-01 09:00:00",
-      "2024-01-01 11:00:00", "2024-01-01 12:00:00"),
-    format = "%Y-%m-%d %H:%M:%S"
-  ),
-  Temp  = c(25.12, NA,    26.26, 27.07),
-  Humid = c(80.04, 82.38, 85.03, 83.57),
-  VPD   = c(0.276, 0.312, 0.389, 0.402)
-)
+**Sample data**
 
-# fill missing timestamp rows (e.g. hour 10:00 absent)
-gap <- fill_time_gaps(df_datetime,
+| DateTime | Temp | Humid | Solar | WindDirection | WindSpeed | RainFall | VPD |
+|---|---|---|---|---|---|---|---|
+| 2024-01-01 08:00 | 25.12 | 80.04 | 14.0591 | 94.8218 | 0.0000 | 0.0000 | 0.2758 |
+| 2024-01-01 09:00 | NA | 82.38 | 18.3274 | 91.2340 | 0.5200 | 0.0000 | 0.3124 |
+| 2024-01-01 11:00 | 26.26 | 85.03 | 22.7810 | 88.6500 | 1.1400 | 0.0000 | 0.3892 |
+| 2024-01-01 12:00 | 27.07 | 83.57 | NA | 90.1200 | 1.3300 | 0.1200 | 0.4015 |
+
+> Hour 10:00 is missing entirely — `fill_time_gaps()` will insert it as a row of `NA`.
+
+```{r case2, eval=FALSE}
+my_data$datetime <- as.POSIXct(my_data$datetime,
+                                format = "%Y-%m-%d %H:%M:%S")
+
+gap <- fill_time_gaps(my_data,
                       time_col = "datetime",
                       n        = 1,
                       unit     = "hour")
 
-result <- ts_preprocess(
-  data        = gap$data,
-  train_ratio = 0.8,
-  target_col  = "VPD",
-  k_folds     = 5L
-)
+result <- ts_preprocess(data        = gap$data,
+                        train_ratio = 0.8,
+                        target_col  = "VPD",
+                        k_folds     = 5L)
 ```
 
 ---
 
 ## Case 3: Date only (daily data)
 
-```{r case3, eval=FALSE}
-df_daily <- data.frame(
-  date = as.Date(c("2024-01-01", "2024-01-02", "2024-01-04", "2024-01-05")),
-  Temp  = c(28.38, 29.16, 27.89, 26.50),
-  Humid = c(75.04, 72.05, 78.03, 80.54),
-  VPD   = c(0.276, 0.312, 0.389, 0.302)
-)
+**Sample data**
 
-# fill missing timestamp rows (e.g. 2024-01-03 absent)
-gap <- fill_time_gaps(df_daily,
+| date | Temp | Humid | Solar | WindDirection | WindSpeed | RainFall | VPD |
+|---|---|---|---|---|---|---|---|
+| 2024-01-01 | 28.38 | 75.04 | 14.0591 | 94.8218 | 0.0000 | 0.0000 | 0.275835 |
+| 2024-01-02 | 29.16 | 72.05 | NA | 91.2340 | 0.5200 | 0.0000 | 0.312410 |
+| 2024-01-04 | 27.89 | 78.03 | 22.7810 | 88.6500 | 1.1400 | 2.4000 | 0.389200 |
+| 2024-01-05 | 26.50 | 80.54 | 19.4320 | NA | 0.8800 | 0.0000 | 0.301770 |
+
+> 2024-01-03 is missing entirely — `fill_time_gaps()` will insert it as a row of `NA`.
+
+```{r case3, eval=FALSE}
+gap <- fill_time_gaps(my_data,
                       time_col = "date",
                       n        = 1,
                       unit     = "day")
 
-result <- ts_preprocess(
-  data        = gap$data,
-  train_ratio = 0.8,
-  target_col  = "VPD",
-  k_folds     = 5L
-)
+result <- ts_preprocess(data        = gap$data,
+                        train_ratio = 0.8,
+                        target_col  = "VPD",
+                        k_folds     = 5L)
 ```
 
 ---
 
-## Walk-Forward Cross-Validation
+## Export Results
+
+```{r export, eval=FALSE}
+ts_export(result,
+          dir          = "output",
+          prefix       = "data",
+          export_clean  = TRUE,
+          export_report = FALSE)
+# Saves:
+#   output/data_train_scaled.csv
+#   output/data_test_scaled.csv
+#   output/data_data_clean.csv
+```
+
+---
+
+## Cross-Validation
 
 `atspR` uses **walk-forward validation** — the correct approach for
-time-series. Each fold's validation set always follows its training set
-in time.
+time-series data. Each validation fold is always preceded only by past
+data, so no future information leaks into training.
 
 ```
 Seed(20%)  Fold1  Fold2  Fold3  Fold4  Fold5
@@ -138,18 +193,24 @@ Seed(20%)  Fold1  Fold2  Fold3  Fold4  Fold5
 Fold 1: train = seed              → val = fold1
 Fold 2: train = seed + fold1      → val = fold2
 Fold 3: train = seed + fold1+2    → val = fold3
+...
 ```
 
----
+```{r cv_example, eval=FALSE}
+data(airquality)
+clean <- airquality[complete.cases(airquality), ]
+sp    <- split_data(clean, verbose = FALSE)
+sc    <- scale_data(sp, method = "auto", verbose = FALSE)
 
-## Export Results
+cv <- cross_validate(
+  sc,
+  target_col     = "Ozone",
+  k              = 5L,
+  min_train_size = 0.2
+)
 
-```{r export, eval=FALSE}
-ts_export(result, dir = "output", prefix = "data")
-# Saves:
-#   output/data_train_scaled.csv
-#   output/data_test_scaled.csv
-#   output/data_data_clean.csv
+cv$summary
+cv$fold_results
 ```
 
 ---
@@ -171,3 +232,13 @@ ts_export(result, dir = "output", prefix = "data")
 | `cross_validate()` | Walk-forward k-fold CV |
 | `ts_preprocess()` | Run all steps in one call |
 | `ts_export()` | Export results to CSV |
+
+---
+
+## Citation
+
+```
+Sueppong Mueanchamnong and Pattharaporn Thongnim (2026). atspR: Automated
+Time-Series Preprocessing in R. R package version 1.0.0.
+https://github.com/EasternTechFusion/atspR
+```
