@@ -1,0 +1,158 @@
+# Getting Started with atspR
+
+## Overview
+
+`atspR` (**Automated Time-Series Preprocessing in R**) provides a
+complete, modular preprocessing framework for time-series data — from
+raw input to cross-validated, model-ready datasets.
+
+------------------------------------------------------------------------
+
+## Installation
+
+``` r
+
+devtools::install_github("example/Automated-Time-Series-Preprocessing-in-R")
+```
+
+------------------------------------------------------------------------
+
+## Case 1: Date only (daily data)
+
+``` r
+
+library(atspR)
+
+df <- data.frame(
+  date  = as.Date(c("2024-01-01","2024-01-02","2024-01-04","2024-01-05")),
+  sales = c(100, 120, NA, 130),
+  temp  = c(28.1, 27.5, 29.0, 28.8)
+)
+
+# 1. Standardise missing values
+df <- standardize_na(df, na_strings = c("-", "Missing"))
+
+# 2. Fill missing timestamps
+gap <- fill_time_gaps(df, time_col = "date", n = 1, unit = "day")
+
+# 3. Run full pipeline
+result <- ts_preprocess(
+  data         = gap$data,
+  train_ratio  = 0.8,
+  scale_method = "minmax",
+  target_col   = "sales"
+)
+
+result$cv_summary
+```
+
+------------------------------------------------------------------------
+
+## Case 2: Datetime in one column
+
+``` r
+
+df$datetime <- as.POSIXct(df$datetime,
+                           format = "%Y-%m-%d %H:%M:%S",
+                           tz     = "UTC")
+
+gap    <- fill_time_gaps(df, time_col = "datetime", n = 1, unit = "hour")
+result <- ts_preprocess(data = gap$data, target_col = "temp")
+```
+
+------------------------------------------------------------------------
+
+## Case 3: Date + Time in separate columns
+
+``` r
+
+# combine_datetime รองรับ time_type 3 แบบ:
+#   "hour"   → integer 0-23  เช่น 8, 14
+#   "hhmm"   → integer HHMM  เช่น 830, 1430
+#   "string" → character     เช่น "08:30", "14:30"
+
+df2 <- combine_datetime(raw_data,
+                        date_col  = "Date",
+                        time_col  = "Time",
+                        new_col   = "datetime",
+                        time_type = "string",
+                        tz        = "Asia/Bangkok")
+
+gap    <- fill_time_gaps(df2, time_col = "datetime", n = 1, unit = "hour")
+result <- ts_preprocess(
+  data          = gap$data,
+  impute_method = "knn",
+  scale_method  = "minmax",
+  target_col    = "VPD",
+  k_folds       = 5L
+)
+```
+
+------------------------------------------------------------------------
+
+## Walk-Forward Cross-Validation
+
+`atspR` uses **walk-forward validation** — the correct approach for
+time-series. Each fold’s validation set always follows its training set
+in time.
+
+    Seed(20%)  Fold1  Fold2  Fold3  Fold4  Fold5
+    [─────────][─────][─────][─────][─────][─────]
+
+    Fold 1: train = seed              → val = fold1
+    Fold 2: train = seed + fold1      → val = fold2
+    Fold 3: train = seed + fold1+2    → val = fold3
+
+``` r
+
+data(airquality)
+clean <- airquality[complete.cases(airquality), ]
+sp    <- split_data(clean, verbose = FALSE)
+sc    <- scale_data(sp, method = "minmax", verbose = FALSE)
+
+cv <- cross_validate(
+  sc,
+  target_col     = "Ozone",
+  k              = 5L,
+  min_train_size = 0.2
+)
+
+cv$summary
+cv$fold_results
+```
+
+------------------------------------------------------------------------
+
+## Export Results
+
+``` r
+
+export_pipeline(result, dir = "output", prefix = "atspR")
+# Saves:
+#   output/atspR_train_scaled.csv
+#   output/atspR_test_scaled.csv
+#   output/atspR_data_clean.csv
+#   output/atspR_missing_report.csv
+#   output/atspR_scale_params.csv
+#   output/atspR_cv_summary.csv
+```
+
+------------------------------------------------------------------------
+
+## Available Functions
+
+| Function | Description |
+|----|----|
+| [`standardize_na()`](https://easterntechfusion.github.io/atspR/reference/standardize_na.md) | Convert custom missing indicators to `NA` |
+| [`coerce_numeric()`](https://easterntechfusion.github.io/atspR/reference/coerce_numeric.md) | Auto-convert character columns to numeric |
+| [`combine_datetime()`](https://easterntechfusion.github.io/atspR/reference/combine_datetime.md) | Merge date + time columns → `POSIXct` |
+| [`fill_time_gaps()`](https://easterntechfusion.github.io/atspR/reference/fill_time_gaps.md) | Insert missing timestamps |
+| [`missing_analysis()`](https://easterntechfusion.github.io/atspR/reference/missing_analysis.md) | Analyse & visualise missing values |
+| [`handle_missing()`](https://easterntechfusion.github.io/atspR/reference/handle_missing.md) | Drop rows or impute (linear / KNN) |
+| [`visualize_data()`](https://easterntechfusion.github.io/atspR/reference/visualize_data.md) | Scatter plots per variable |
+| [`split_data()`](https://easterntechfusion.github.io/atspR/reference/split_data.md) | Temporal train / test split |
+| [`scale_data()`](https://easterntechfusion.github.io/atspR/reference/scale_data.md) | Feature scaling |
+| [`inverse_scale()`](https://easterntechfusion.github.io/atspR/reference/inverse_scale.md) | Reverse scaling to original units |
+| [`cross_validate()`](https://easterntechfusion.github.io/atspR/reference/cross_validate.md) | Walk-forward k-fold CV |
+| [`ts_preprocess()`](https://easterntechfusion.github.io/atspR/reference/ts_preprocess.md) | Run all steps in one call |
+| `export_pipeline()` | Export results to CSV |
