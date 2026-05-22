@@ -203,27 +203,12 @@ follows its training set in time.</p>
 Fold 1: train = seed              → val = fold1
 Fold 2: train = seed + fold1      → val = fold2
 Fold 3: train = seed + fold1+2    → val = fold3</code></pre>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">airquality</span><span class="op">)</span></span>
-<span><span class="va">clean</span> <span class="op">&lt;-</span> <span class="va">airquality</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/stats/complete.cases.html" class="external-link">complete.cases</a></span><span class="op">(</span><span class="va">airquality</span><span class="op">)</span>, <span class="op">]</span></span>
-<span><span class="va">sp</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/split_data.html">split_data</a></span><span class="op">(</span><span class="va">clean</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">sc</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/scale_data.html">scale_data</a></span><span class="op">(</span><span class="va">sp</span>, method <span class="op">=</span> <span class="st">"auto"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">cv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cross_validate.html">cross_validate</a></span><span class="op">(</span></span>
-<span>  <span class="va">sc</span>,</span>
-<span>  target_col     <span class="op">=</span> <span class="st">"Ozone"</span>,</span>
-<span>  k              <span class="op">=</span> <span class="fl">5L</span>,</span>
-<span>  min_train_size <span class="op">=</span> <span class="fl">0.2</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">cv</span><span class="op">$</span><span class="va">summary</span></span>
-<span><span class="va">cv</span><span class="op">$</span><span class="va">fold_results</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="export-results">Export Results<a class="anchor" aria-label="anchor" href="#export-results"></a>
 </h2>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ts_export.html">ts_export</a></span><span class="op">(</span><span class="va">result</span>, dir <span class="op">=</span> <span class="st">"output"</span>, prefix <span class="op">=</span> <span class="st">"data"</span><span class="op">)</span></span>
 <span><span class="co"># Saves:</span></span>
 <span><span class="co">#   output/data_train_scaled.csv</span></span>

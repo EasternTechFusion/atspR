@@ -126,24 +126,6 @@ in time.
     Fold 2: train = seed + fold1      → val = fold2
     Fold 3: train = seed + fold1+2    → val = fold3
 
-``` r
-
-data(airquality)
-clean <- airquality[complete.cases(airquality), ]
-sp    <- split_data(clean, verbose = FALSE)
-sc    <- scale_data(sp, method = "auto", verbose = FALSE)
-
-cv <- cross_validate(
-  sc,
-  target_col     = "Ozone",
-  k              = 5L,
-  min_train_size = 0.2
-)
-
-cv$summary
-cv$fold_results
-```
-
 ------------------------------------------------------------------------
 
 ## Export Results
