@@ -111,10 +111,17 @@ missing_analysis <- function(data, plot = TRUE, verbose = TRUE) {
         ggplot2::stat_summary(
           fun = mean, geom = "point",
           shape = 23, size = 3,
-          fill = "white", colour = "black"
+          fill = "#F5F5F5", colour = "#333333"
         ) +
         ggplot2::facet_wrap(~ variable, scales = "free_y", ncol = 2) +
-        ggplot2::scale_fill_viridis_d(option = "plasma", guide = "none") +
+        ggplot2::scale_fill_manual(values = rep(c(
+          "#08306B",  # navy       — กรมท่าเข้ม
+          "#2171B5",  # royal blue — น้ำเงินกลาง
+          "#6BAED6",  # steel blue — ฟ้ากลาง
+          "#BDD7E7",  # pale blue  — ฟ้าอ่อน
+          "#4ECDC4",  # teal       — เขียวอมฟ้า
+          "#A8D8EA"   # sky blue   — ฟ้าท้องฟ้า
+        ), length.out = 20), guide = "none") +
         ggplot2::labs(
           title = sprintf("Boxplots - Numeric Variables (page %d / %d)", page, n_pages),
           subtitle = paste0("Overall missing: ", .pct(overall_pct)),
