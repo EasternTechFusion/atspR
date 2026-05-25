@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Getting Started with atspR • atspR</title>
+<title>atspR — Getting Started • atspR</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Getting Started with atspR">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="atspR — Getting Started">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -33,7 +33,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with atspR</a></li>
+<li><a class="dropdown-item" href="../articles/getting-started.html">atspR — Getting Started</a></li>
   </ul>
 </li>
       </ul>
@@ -55,8 +55,12 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Getting Started with atspR</h1>
+      <h1>atspR — Getting Started</h1>
+            <h3 data-toc-skip class="subtitle">Automated Time-Series
+Preprocessing in R</h3>
             
+            <h4 data-toc-skip class="date">v1.0.0 · MIT License ·
+EasternTechFusion/atspR</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R/blob/master/vignettes/getting-started.Rmd" class="external-link"><code>vignettes/getting-started.Rmd</code></a></small>
       <div class="d-none name"><code>getting-started.Rmd</code></div>
@@ -64,21 +68,17 @@
 
     
     
+<hr>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p><code>atspR</code> is an R package that provides an automated,
-modular preprocessing pipeline for time-series data covering the full
-journey from raw sensor data to cross-validated, model-ready train and
-test sets.</p>
-<p>The package is designed for students and domain practitioners
-(agronomists, environmental scientists, irrigation engineers) who work
-primarily in R and need a reliable, leakage-free preprocessing workflow
-without having to manage multiple packages or worry about the correct
-sequencing of steps.</p>
-<div class="section level3">
-<h3 id="why-atspr">Why atspR?<a class="anchor" aria-label="anchor" href="#why-atspr"></a>
-</h3>
+<p><code>atspR</code> provides an automated, modular preprocessing
+pipeline for time-series data — covering the full journey from raw
+sensor data to cross-validated, model-ready train and test sets.</p>
+<p>Designed for students and domain practitioners (agronomists,
+environmental scientists, irrigation engineers) who need a reliable,
+leakage-free preprocessing workflow without managing multiple packages
+or worrying about step sequencing.</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -86,7 +86,7 @@ sequencing of steps.</p>
 </colgroup>
 <thead><tr class="header">
 <th>Problem</th>
-<th>How atspR solves it</th>
+<th>How <code>atspR</code> solves it</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -99,60 +99,64 @@ sets</td>
 <tr class="even">
 <td>Random split invalidates time-series models</td>
 <td>
-<strong>Temporal split</strong> — train always precedes test
-chronologically</td>
+<strong>Temporal split</strong> — train always precedes test</td>
 </tr>
 <tr class="odd">
 <td>Silent NA removal with no record</td>
-<td>Full report of what was dropped or imputed, and why</td>
+<td>Full report of what was dropped or imputed</td>
 </tr>
 <tr class="even">
 <td>Multi-package workflow, easy to sequence incorrectly</td>
-<td>Single function <code><a href="../reference/ts_preprocess.html">ts_preprocess()</a></code> runs all 7 steps in
-order</td>
+<td>Single <code><a href="../reference/ts_preprocess.html">ts_preprocess()</a></code> runs all steps in order</td>
 </tr>
 <tr class="odd">
 <td>Error messages with no guidance</td>
-<td>Every automated decision explained in plain-language output</td>
+<td>Every decision explained in plain-language output</td>
 </tr>
 </tbody>
 </table>
 <hr>
 </div>
-</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"EasternTechFusion/atspR"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Install devtools if needed</span></span>
+<span><span class="co"># install.packages("devtools")</span></span>
+<span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"EasternTechFusion/atspR"</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="pipeline">Pipeline<a class="anchor" aria-label="anchor" href="#pipeline"></a>
 </h2>
+<p>The full pipeline runs 10 stages in sequence:</p>
 <pre><code>Raw data
    │
-   ├─ (Stage 1) combine_datetime()      Merge date + time columns → POSIXct (optional)
-   ├─ (Stage 2) fill_time_gaps()        Insert placeholder rows for missing timestamps
+   ├─ (Stage 1)  combine_datetime()   [optional] Merge date + time → POSIXct
+   ├─ (Stage 2)  fill_time_gaps()     Insert placeholder rows for missing timestamps
    │
-   └─ ts_preprocess()                   ────────────────── 8 steps ──────────────────
-   │    (Stage 3) standardize_na()      Convert sentinel values to NA
-   │    (Stage 4) coerce_numeric()      Parse character columns to numeric
-   │    (Stage 5) split_data()          Temporal train/test split
-   │    (Stage 6) missing_analysis()    Summarise NAs; decide DROP or IMPUTE
-   │    (Stage 7) handle_missing()      Drop rows or interpolate (linear/KNN)
-   │    (Stage 8) visualize_data()      Scatter plots per variable vs time
-   │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
-   │    (Stage 10) cross_validate()     Walk-forward k-fold CV (optional)
+   └─ ts_preprocess() ─────────────────────────────────────────────────────────
+        (Stage 3)  standardize_na()   Convert sentinel values to NA
+        (Stage 4)  coerce_numeric()   Parse character columns to numeric
+        (Stage 5)  split_data()       Temporal train/test split
+        (Stage 6)  missing_analysis() Summarise NAs; decide DROP or IMPUTE
+        (Stage 7)  handle_missing()   Drop rows or interpolate (linear/KNN)
+        (Stage 8)  visualize_data()   Scatter plots per variable vs time
+        (Stage 9)  scale_data()       MinMax / Z-score / Robust (auto)
+        (Stage 10) cross_validate()   [optional] Walk-forward k-fold CV
    │
-   └─ ts_export()                       Write all outputs to CSV</code></pre>
+   └─ ts_export()  Write all outputs to CSV</code></pre>
 <hr>
 </div>
 <div class="section level2">
-<h2 id="case-1-date-time-in-separate-columns">Case 1: Date + Time in separate columns<a class="anchor" aria-label="anchor" href="#case-1-date-time-in-separate-columns"></a>
+<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<p><strong>Sample data</strong></p>
+<div class="section level3">
+<h3 id="case1">Case 1: Date + Time in separate columns<a class="anchor" aria-label="anchor" href="#case1"></a>
+</h3>
+<p><strong>Sample input:</strong></p>
 <table style="width:100%;" class="table">
 <colgroup>
 <col width="11%">
@@ -182,10 +186,10 @@ order</td>
 <td>08:00</td>
 <td>25.12</td>
 <td>80.04</td>
-<td>14.0591</td>
-<td>94.8218</td>
-<td>0.0000</td>
-<td>0.0000</td>
+<td>14.06</td>
+<td>94.82</td>
+<td>0.00</td>
+<td>0.00</td>
 <td>0.2758</td>
 </tr>
 <tr class="even">
@@ -193,10 +197,10 @@ order</td>
 <td>09:00</td>
 <td>NA</td>
 <td>82.38</td>
-<td>18.3274</td>
-<td>91.2340</td>
-<td>0.5200</td>
-<td>0.0000</td>
+<td>18.33</td>
+<td>91.23</td>
+<td>0.52</td>
+<td>0.00</td>
 <td>0.3124</td>
 </tr>
 <tr class="odd">
@@ -204,22 +208,11 @@ order</td>
 <td>11:00</td>
 <td>26.26</td>
 <td>85.03</td>
-<td>22.7810</td>
-<td>88.6500</td>
-<td>1.1400</td>
-<td>0.0000</td>
+<td>22.78</td>
+<td>88.65</td>
+<td>1.14</td>
+<td>0.00</td>
 <td>0.3892</td>
-</tr>
-<tr class="even">
-<td>2024-01-01</td>
-<td>12:00</td>
-<td>27.07</td>
-<td>83.57</td>
-<td>NA</td>
-<td>90.1200</td>
-<td>1.3300</td>
-<td>0.1200</td>
-<td>0.4015</td>
 </tr>
 </tbody>
 </table>
@@ -230,46 +223,36 @@ insert it as a row of <code>NA</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Step 1 — merge date and time columns into a single POSIXct column</span></span>
 <span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/combine_datetime.html">combine_datetime</a></span><span class="op">(</span><span class="va">my_data</span>,</span>
 <span>                       date_col  <span class="op">=</span> <span class="st">"Date"</span>,</span>
 <span>                       time_col  <span class="op">=</span> <span class="st">"Time"</span>,</span>
 <span>                       new_col   <span class="op">=</span> <span class="st">"datetime"</span>,</span>
 <span>                       time_type <span class="op">=</span> <span class="st">"string"</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Step 2 — fill missing timestamps with NA rows</span></span>
 <span><span class="va">gap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fill_time_gaps.html">fill_time_gaps</a></span><span class="op">(</span><span class="va">df</span>,</span>
 <span>                      time_col <span class="op">=</span> <span class="st">"datetime"</span>,</span>
 <span>                      n        <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>                      unit     <span class="op">=</span> <span class="st">"hour"</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Step 3 — run the full preprocessing pipeline</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ts_preprocess.html">ts_preprocess</a></span><span class="op">(</span>data        <span class="op">=</span> <span class="va">gap</span><span class="op">$</span><span class="va">data</span>,</span>
 <span>                        train_ratio <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>                        target_col  <span class="op">=</span> <span class="st">"VPD"</span>,</span>
-<span>                        k_folds     <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span></code></pre></div>
+<span>                        k_folds     <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
-<div class="section level2">
-<h2 id="case-2-datetime-in-one-column">Case 2: Datetime in one column<a class="anchor" aria-label="anchor" href="#case-2-datetime-in-one-column"></a>
-</h2>
-<p><strong>Sample data</strong></p>
+<div class="section level3">
+<h3 id="case2">Case 2: Datetime in one column<a class="anchor" aria-label="anchor" href="#case2"></a>
+</h3>
+<p><strong>Sample input:</strong></p>
 <table class="table">
-<colgroup>
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-</colgroup>
 <thead><tr class="header">
 <th>DateTime</th>
 <th>Temp</th>
 <th>Humid</th>
 <th>Solar</th>
-<th>WindDirection</th>
-<th>WindSpeed</th>
-<th>RainFall</th>
 <th>VPD</th>
 </tr></thead>
 <tbody>
@@ -277,86 +260,55 @@ insert it as a row of <code>NA</code>.</p>
 <td>2024-01-01 08:00</td>
 <td>25.12</td>
 <td>80.04</td>
-<td>14.0591</td>
-<td>94.8218</td>
-<td>0.0000</td>
-<td>0.0000</td>
+<td>14.06</td>
 <td>0.2758</td>
 </tr>
 <tr class="even">
 <td>2024-01-01 09:00</td>
 <td>NA</td>
 <td>82.38</td>
-<td>18.3274</td>
-<td>91.2340</td>
-<td>0.5200</td>
-<td>0.0000</td>
+<td>18.33</td>
 <td>0.3124</td>
 </tr>
 <tr class="odd">
 <td>2024-01-01 11:00</td>
 <td>26.26</td>
 <td>85.03</td>
-<td>22.7810</td>
-<td>88.6500</td>
-<td>1.1400</td>
-<td>0.0000</td>
+<td>22.78</td>
 <td>0.3892</td>
-</tr>
-<tr class="even">
-<td>2024-01-01 12:00</td>
-<td>27.07</td>
-<td>83.57</td>
-<td>NA</td>
-<td>90.1200</td>
-<td>1.3300</td>
-<td>0.1200</td>
-<td>0.4015</td>
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p>Hour 10:00 is missing entirely — <code><a href="../reference/fill_time_gaps.html">fill_time_gaps()</a></code> will
-insert it as a row of <code>NA</code>.</p>
-</blockquote>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">my_data</span><span class="op">$</span><span class="va">datetime</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="va">my_data</span><span class="op">$</span><span class="va">datetime</span>,</span>
-<span>                                format <span class="op">=</span> <span class="st">"%Y-%m-%d %H:%M:%S"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">gap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fill_time_gaps.html">fill_time_gaps</a></span><span class="op">(</span><span class="va">my_data</span>,</span>
+<span><span class="co"># Parse the datetime column to POSIXct</span></span>
+<span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span>,</span>
+<span>                           format <span class="op">=</span> <span class="st">"%Y-%m-%d %H:%M:%S"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fill missing timestamps</span></span>
+<span><span class="va">gap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fill_time_gaps.html">fill_time_gaps</a></span><span class="op">(</span><span class="va">df</span>,</span>
 <span>                      time_col <span class="op">=</span> <span class="st">"datetime"</span>,</span>
 <span>                      n        <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>                      unit     <span class="op">=</span> <span class="st">"hour"</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Run pipeline</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ts_preprocess.html">ts_preprocess</a></span><span class="op">(</span>data        <span class="op">=</span> <span class="va">gap</span><span class="op">$</span><span class="va">data</span>,</span>
 <span>                        train_ratio <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>                        target_col  <span class="op">=</span> <span class="st">"VPD"</span>,</span>
-<span>                        k_folds     <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span></code></pre></div>
+<span>                        k_folds     <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
-<div class="section level2">
-<h2 id="case-3-date-only-daily-data">Case 3: Date only (daily data)<a class="anchor" aria-label="anchor" href="#case-3-date-only-daily-data"></a>
-</h2>
-<p><strong>Sample data</strong></p>
+<div class="section level3">
+<h3 id="case3">Case 3: Date only (daily data)<a class="anchor" aria-label="anchor" href="#case3"></a>
+</h3>
+<p><strong>Sample input:</strong></p>
 <table class="table">
-<colgroup>
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-<col width="12%">
-</colgroup>
 <thead><tr class="header">
 <th>date</th>
 <th>Temp</th>
 <th>Humid</th>
 <th>Solar</th>
-<th>WindDirection</th>
-<th>WindSpeed</th>
-<th>RainFall</th>
 <th>VPD</th>
 </tr></thead>
 <tbody>
@@ -364,73 +316,146 @@ insert it as a row of <code>NA</code>.</p>
 <td>2024-01-01</td>
 <td>28.38</td>
 <td>75.04</td>
-<td>14.0591</td>
-<td>94.8218</td>
-<td>0.0000</td>
-<td>0.0000</td>
-<td>0.275835</td>
+<td>14.06</td>
+<td>0.2758</td>
 </tr>
 <tr class="even">
 <td>2024-01-02</td>
 <td>29.16</td>
 <td>72.05</td>
 <td>NA</td>
-<td>91.2340</td>
-<td>0.5200</td>
-<td>0.0000</td>
-<td>0.312410</td>
+<td>0.3124</td>
 </tr>
 <tr class="odd">
 <td>2024-01-04</td>
 <td>27.89</td>
 <td>78.03</td>
-<td>22.7810</td>
-<td>88.6500</td>
-<td>1.1400</td>
-<td>2.4000</td>
-<td>0.389200</td>
-</tr>
-<tr class="even">
-<td>2024-01-05</td>
-<td>26.50</td>
-<td>80.54</td>
-<td>19.4320</td>
-<td>NA</td>
-<td>0.8800</td>
-<td>0.0000</td>
-<td>0.301770</td>
+<td>22.78</td>
+<td>0.3892</td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p>2024-01-03 is missing entirely — <code><a href="../reference/fill_time_gaps.html">fill_time_gaps()</a></code> will
-insert it as a row of <code>NA</code>.</p>
+<p>2024-01-03 is missing — <code><a href="../reference/fill_time_gaps.html">fill_time_gaps()</a></code> will insert it
+as a row of <code>NA</code>.</p>
 </blockquote>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">gap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fill_time_gaps.html">fill_time_gaps</a></span><span class="op">(</span><span class="va">my_data</span>,</span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fill missing dates</span></span>
+<span><span class="va">gap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fill_time_gaps.html">fill_time_gaps</a></span><span class="op">(</span><span class="va">df</span>,</span>
 <span>                      time_col <span class="op">=</span> <span class="st">"date"</span>,</span>
 <span>                      n        <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>                      unit     <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Run pipeline</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ts_preprocess.html">ts_preprocess</a></span><span class="op">(</span>data        <span class="op">=</span> <span class="va">gap</span><span class="op">$</span><span class="va">data</span>,</span>
 <span>                        train_ratio <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>                        target_col  <span class="op">=</span> <span class="st">"VPD"</span>,</span>
-<span>                        k_folds     <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span></code></pre></div>
+<span>                        k_folds     <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="ts_preprocess-parameters">
+<code>ts_preprocess()</code> Parameters<a class="anchor" aria-label="anchor" href="#ts_preprocess-parameters"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>data</code></td>
+<td>data.frame</td>
+<td>—</td>
+<td>Input dataframe (after <code><a href="../reference/fill_time_gaps.html">fill_time_gaps()</a></code>)</td>
+</tr>
+<tr class="even">
+<td><code>target_col</code></td>
+<td>character</td>
+<td>—</td>
+<td>Name of the response variable column</td>
+</tr>
+<tr class="odd">
+<td><code>train_ratio</code></td>
+<td>numeric [0–1]</td>
+<td><code>0.8</code></td>
+<td>Proportion of data used for training</td>
+</tr>
+<tr class="even">
+<td><code>k_folds</code></td>
+<td>integer</td>
+<td><code>5</code></td>
+<td>Number of walk-forward CV folds; <code>NULL</code> to skip</td>
+</tr>
+<tr class="odd">
+<td><code>impute_method</code></td>
+<td>character</td>
+<td><code>"linear"</code></td>
+<td>
+<code>"linear"</code> or <code>"knn"</code> interpolation</td>
+</tr>
+<tr class="even">
+<td><code>scale_method</code></td>
+<td>character</td>
+<td><code>"auto"</code></td>
+<td>
+<code>"minmax"</code>, <code>"zscore"</code>, <code>"robust"</code>,
+or <code>"auto"</code>
+</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong><code>scale_method = "auto"</code></strong> selects robust
+scaling for skewed distributions, and MinMax otherwise.</p>
+</blockquote>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="export-results">Export Results<a class="anchor" aria-label="anchor" href="#export-results"></a>
 </h2>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/ts_export.html">ts_export</a></span><span class="op">(</span><span class="va">result</span>,</span>
-<span>          dir          <span class="op">=</span> <span class="st">"output"</span>,</span>
-<span>          prefix       <span class="op">=</span> <span class="st">"data"</span>,</span>
-<span>          export_clean  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>          export_report <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co"># Saves:</span></span>
-<span><span class="co">#   output/data_train_scaled.csv</span></span>
-<span><span class="co">#   output/data_test_scaled.csv</span></span>
-<span><span class="co">#   output/data_data_clean.csv</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ts_export.html">ts_export</a></span><span class="op">(</span><span class="va">result</span>, dir <span class="op">=</span> <span class="st">"C:/Users/user/"</span>, prefix <span class="op">=</span> <span class="st">"data"</span><span class="op">)</span></span></code></pre></div>
+<p>This writes four files to the specified directory:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>File</th>
+<th>Contents</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>data_train.csv</code></td>
+<td>Scaled training set</td>
+</tr>
+<tr class="even">
+<td><code>data_test.csv</code></td>
+<td>Scaled test set</td>
+</tr>
+<tr class="odd">
+<td><code>data_cv_folds.csv</code></td>
+<td>Walk-forward CV fold assignments</td>
+</tr>
+<tr class="even">
+<td><code>data_preprocessing_report.csv</code></td>
+<td>Full log of every automated decision</td>
+</tr>
+</tbody>
+</table>
 <hr>
 </div>
 <div class="section level2">
@@ -438,105 +463,34 @@ insert it as a row of <code>NA</code>.</p>
 </h2>
 <p><code>atspR</code> uses <strong>walk-forward validation</strong> —
 the correct approach for time-series data. Each validation fold is
-always preceded only by past data, so no future information leaks into
+preceded only by past data, so no future information leaks into
 training.</p>
 <pre><code>Seed(20%)  Fold1  Fold2  Fold3  Fold4  Fold5
 [─────────][─────][─────][─────][─────][─────]
 
 Fold 1: train = seed              → val = fold1
 Fold 2: train = seed + fold1      → val = fold2
-Fold 3: train = seed + fold1+2    → val = fold3
-...</code></pre>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">airquality</span><span class="op">)</span></span>
-<span><span class="va">clean</span> <span class="op">&lt;-</span> <span class="va">airquality</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/stats/complete.cases.html" class="external-link">complete.cases</a></span><span class="op">(</span><span class="va">airquality</span><span class="op">)</span>, <span class="op">]</span></span>
-<span><span class="va">sp</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/split_data.html">split_data</a></span><span class="op">(</span><span class="va">clean</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">sc</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/scale_data.html">scale_data</a></span><span class="op">(</span><span class="va">sp</span>, method <span class="op">=</span> <span class="st">"auto"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">cv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cross_validate.html">cross_validate</a></span><span class="op">(</span></span>
-<span>  <span class="va">sc</span>,</span>
-<span>  target_col     <span class="op">=</span> <span class="st">"Ozone"</span>,</span>
-<span>  k              <span class="op">=</span> <span class="fl">5L</span>,</span>
-<span>  min_train_size <span class="op">=</span> <span class="fl">0.2</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">cv</span><span class="op">$</span><span class="va">summary</span></span>
-<span><span class="va">cv</span><span class="op">$</span><span class="va">fold_results</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="available-functions">Available Functions<a class="anchor" aria-label="anchor" href="#available-functions"></a>
-</h2>
-<table class="table">
-<thead><tr class="header">
-<th>Function</th>
-<th>Description</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><code><a href="../reference/standardize_na.html">standardize_na()</a></code></td>
-<td>Convert custom missing indicators to <code>NA</code>
-</td>
-</tr>
-<tr class="even">
-<td><code><a href="../reference/coerce_numeric.html">coerce_numeric()</a></code></td>
-<td>Auto-convert character columns to numeric</td>
-</tr>
-<tr class="odd">
-<td><code><a href="../reference/combine_datetime.html">combine_datetime()</a></code></td>
-<td>Merge date + time columns → <code>POSIXct</code>
-</td>
-</tr>
-<tr class="even">
-<td><code><a href="../reference/fill_time_gaps.html">fill_time_gaps()</a></code></td>
-<td>Insert missing timestamp rows</td>
-</tr>
-<tr class="odd">
-<td><code><a href="../reference/missing_analysis.html">missing_analysis()</a></code></td>
-<td>Analyse &amp; visualise missing values</td>
-</tr>
-<tr class="even">
-<td><code><a href="../reference/handle_missing.html">handle_missing()</a></code></td>
-<td>Drop rows or impute (linear / KNN)</td>
-</tr>
-<tr class="odd">
-<td><code><a href="../reference/visualize_data.html">visualize_data()</a></code></td>
-<td>Scatter plots per variable</td>
-</tr>
-<tr class="even">
-<td><code><a href="../reference/split_data.html">split_data()</a></code></td>
-<td>Temporal train / test split</td>
-</tr>
-<tr class="odd">
-<td><code><a href="../reference/scale_data.html">scale_data()</a></code></td>
-<td>Feature scaling (auto / minmax / zscore / robust)</td>
-</tr>
-<tr class="even">
-<td><code><a href="../reference/inverse_scale.html">inverse_scale()</a></code></td>
-<td>Reverse scaling to original units</td>
-</tr>
-<tr class="odd">
-<td><code><a href="../reference/cross_validate.html">cross_validate()</a></code></td>
-<td>Walk-forward k-fold CV</td>
-</tr>
-<tr class="even">
-<td><code><a href="../reference/ts_preprocess.html">ts_preprocess()</a></code></td>
-<td>Run all steps in one call</td>
-</tr>
-<tr class="odd">
-<td><code><a href="../reference/ts_export.html">ts_export()</a></code></td>
-<td>Export results to CSV</td>
-</tr>
-</tbody>
-</table>
+Fold 3: train = seed + fold1 + 2  → val = fold3
+Fold 4: train = seed + fold1–3    → val = fold4
+Fold 5: train = seed + fold1–4    → val = fold5</code></pre>
+<blockquote>
+<p><strong>Why this matters:</strong> The scaler is fitted on the
+training set only and applied to both train and test sets — eliminating
+data leakage. The temporal split ensures the test set always follows the
+training set chronologically.</p>
+</blockquote>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
-<pre><code>Sueppong Mueanchamnong and Pattharaporn Thongnim (2026). atspR: Automated
-Time-Series Preprocessing in R. R package version 1.0.0.
+<pre><code>Sueppong Mueanchamnong and Pattharaporn Thongnim (2026).
+atspR: Automated Time-Series Preprocessing in R.
+R package version 1.0.0.
 https://github.com/EasternTechFusion/atspR</code></pre>
+<hr>
+<p><em>MIT © 2024 · <a href="https://github.com/EasternTechFusion/atspR" class="external-link">GitHub
+Repository</a></em></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

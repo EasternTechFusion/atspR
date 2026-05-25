@@ -2,5 +2,5 @@
 
 ### All vignettes
 
-- [Getting Started with
-  atspR](https://easterntechfusion.github.io/atspR/articles/getting-started.md):
+- [atspR — Getting
+  Started](https://easterntechfusion.github.io/atspR/articles/getting-started.md):
