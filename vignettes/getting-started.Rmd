@@ -19,30 +19,10 @@ output:
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
----
-
-## Overview
-
-`atspR` provides an automated, modular preprocessing pipeline for time-series data — covering the full journey from raw sensor data to cross-validated, model-ready train and test sets.
-
-Designed for students and domain practitioners (agronomists, environmental scientists, irrigation engineers) who need a reliable, leakage-free preprocessing workflow without managing multiple packages or worrying about step sequencing.
-
-| Problem | How `atspR` solves it |
-|---|---|
-| Scalers applied before splitting → **data leakage** | Scaler fitted on **TRAIN only**, applied to both sets |
-| Random split invalidates time-series models | **Temporal split** — train always precedes test |
-| Silent NA removal with no record | Full report of what was dropped or imputed |
-| Multi-package workflow, easy to sequence incorrectly | Single `ts_preprocess()` runs all steps in order |
-| Error messages with no guidance | Every decision explained in plain-language output |
-
----
-
 ## Installation
 
 ```r
-# Install devtools if needed
 # install.packages("devtools")
-
 devtools::install_github("EasternTechFusion/atspR")
 library(atspR)
 ```
@@ -50,8 +30,6 @@ library(atspR)
 ---
 
 ## Pipeline
-
-The full pipeline runs 10 stages in sequence:
 
 ```
 Raw data
@@ -76,97 +54,56 @@ Raw data
 
 ## Quick Start
 
-### Case 1: Date + Time in separate columns {#case1}
-
-**Sample input:**
-
-| Date | Time | Temp | Humid | Solar | WindDirection | WindSpeed | RainFall | VPD |
-|---|---|---|---|---|---|---|---|---|
-| 2024-01-01 | 08:00 | 25.12 | 80.04 | 14.06 | 94.82 | 0.00 | 0.00 | 0.2758 |
-| 2024-01-01 | 09:00 | NA | 82.38 | 18.33 | 91.23 | 0.52 | 0.00 | 0.3124 |
-| 2024-01-01 | 11:00 | 26.26 | 85.03 | 22.78 | 88.65 | 1.14 | 0.00 | 0.3892 |
-
-> Hour 10:00 is missing entirely — `fill_time_gaps()` will insert it as a row of `NA`.
+### Case 1: Date + Time in separate columns
 
 ```r
 library(atspR)
 
-# Step 1 — merge date and time columns into a single POSIXct column
 df <- combine_datetime(my_data,
                        date_col  = "Date",
                        time_col  = "Time",
                        new_col   = "datetime",
                        time_type = "string")
 
-# Step 2 — fill missing timestamps with NA rows
 gap <- fill_time_gaps(df,
                       time_col = "datetime",
                       n        = 1,
                       unit     = "hour")
 
-# Step 3 — run the full preprocessing pipeline
 result <- ts_preprocess(data        = gap$data,
                         train_ratio = 0.8,
                         target_col  = "VPD",
                         k_folds     = 5)
 ```
 
----
-
-### Case 2: Datetime in one column {#case2}
-
-**Sample input:**
-
-| DateTime | Temp | Humid | Solar | VPD |
-|---|---|---|---|---|
-| 2024-01-01 08:00 | 25.12 | 80.04 | 14.06 | 0.2758 |
-| 2024-01-01 09:00 | NA | 82.38 | 18.33 | 0.3124 |
-| 2024-01-01 11:00 | 26.26 | 85.03 | 22.78 | 0.3892 |
+### Case 2: Datetime in one column
 
 ```r
 library(atspR)
 
-# Parse the datetime column to POSIXct
-df$datetime <- as.POSIXct(df$datetime,
-                           format = "%Y-%m-%d %H:%M:%S")
+df$datetime <- as.POSIXct(df$datetime, format = "%Y-%m-%d %H:%M:%S")
 
-# Fill missing timestamps
 gap <- fill_time_gaps(df,
                       time_col = "datetime",
                       n        = 1,
                       unit     = "hour")
 
-# Run pipeline
 result <- ts_preprocess(data        = gap$data,
                         train_ratio = 0.8,
                         target_col  = "VPD",
                         k_folds     = 5)
 ```
 
----
-
-### Case 3: Date only (daily data) {#case3}
-
-**Sample input:**
-
-| date | Temp | Humid | Solar | VPD |
-|---|---|---|---|---|
-| 2024-01-01 | 28.38 | 75.04 | 14.06 | 0.2758 |
-| 2024-01-02 | 29.16 | 72.05 | NA | 0.3124 |
-| 2024-01-04 | 27.89 | 78.03 | 22.78 | 0.3892 |
-
-> 2024-01-03 is missing — `fill_time_gaps()` will insert it as a row of `NA`.
+### Case 3: Date only (daily data)
 
 ```r
 library(atspR)
 
-# Fill missing dates
 gap <- fill_time_gaps(df,
                       time_col = "date",
                       n        = 1,
                       unit     = "day")
 
-# Run pipeline
 result <- ts_preprocess(data        = gap$data,
                         train_ratio = 0.8,
                         target_col  = "VPD",
@@ -180,93 +117,25 @@ result <- ts_preprocess(data        = gap$data,
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `data` | data.frame | — | Input dataframe (after `fill_time_gaps()`) |
-| `target_col` | character | — | Name of the response variable column |
+| `target_col` | character | `NULL` | Response column for CV; `NULL` skips CV |
 | `train_ratio` | numeric [0–1] | `0.8` | Proportion of data used for training |
-| `k_folds` | integer | `5` | Number of walk-forward CV folds; `NULL` to skip |
-| `impute_method` | character | `"linear"` | `"linear"` or `"knn"` interpolation |
+| `k_folds` | integer | `5` | Number of walk-forward CV folds |
+| `impute_method` | character | `"linear"` | `"linear"` or `"knn"` |
 | `scale_method` | character | `"auto"` | `"minmax"`, `"zscore"`, `"robust"`, or `"auto"` |
-
-> **`scale_method = "auto"`** selects robust scaling for skewed distributions, and MinMax otherwise.
 
 ---
 
 ## Export Results
 
-Use `ts_export()` to write the pipeline outputs to CSV files.
-
-### Basic usage
-
 ```r
-ts_export(result, dir = "atspR_output", prefix = "atspR")
+ts_export(result, dir = "C:/Users/user/", prefix = "data")
 ```
-
-### Full signature
-
-```r
-ts_export(result,
-          dir           = "atspR_output",
-          prefix        = "atspR",
-          export_clean  = TRUE,
-          export_report = FALSE,
-          verbose       = TRUE)
-```
-
-### Parameters
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `result` | list | — | The list returned by `ts_preprocess()` |
-| `dir` | character | `"atspR_output"` | Output directory; created automatically if it does not exist |
-| `prefix` | character | `"atspR"` | Filename prefix applied to all exported files |
-| `export_clean` | logical | `TRUE` | Also export `data_clean` (cleaned data before scaling) |
-| `export_report` | logical | `FALSE` | Also export `missing_report`, `scale_params`, `cv_summary`, and `cv_folds` |
-| `verbose` | logical | `TRUE` | Print exported file paths to the console |
-
-### Output files
-
-Files are always written as `{prefix}_{name}.csv` inside `dir`.
-
-**Always exported:**
-
-| File | Contents |
-|---|---|
-| `{prefix}_train_scaled.csv` | Scaled training set — ready for modelling |
-| `{prefix}_test_scaled.csv` | Scaled test set |
-
-**Exported when `export_clean = TRUE` (default):**
-
-| File | Contents |
-|---|---|
-| `{prefix}_data_clean.csv` | Cleaned data before scaling (imputed, rows dropped) |
-
-**Exported when `export_report = TRUE`:**
-
-| File | Contents |
-|---|---|
-| `{prefix}_missing_report.csv` | Per-variable NA summary from `missing_analysis()` |
-| `{prefix}_scale_params.csv` | Scaling parameters fitted on the training set |
-| `{prefix}_cv_summary.csv` | Cross-validation summary (if CV was run) |
-| `{prefix}_cv_folds.csv` | Per-fold CV results (if CV was run) |
-
-### Example — export everything
-
-```r
-ts_export(result,
-          dir           = "C:/Users/user/project/output",
-          prefix        = "vpd_model",
-          export_clean  = TRUE,
-          export_report = TRUE)
-```
-
-This produces up to seven files, e.g. `vpd_model_train_scaled.csv`, `vpd_model_missing_report.csv`, etc.
-
-> `ts_export()` returns a named character vector of exported file paths invisibly, so you can capture it with `paths <- ts_export(result, ...)` for programmatic use.
 
 ---
 
 ## Cross-Validation
 
-`atspR` uses **walk-forward validation** — the correct approach for time-series data. Each validation fold is preceded only by past data, so no future information leaks into training.
+`atspR` uses **walk-forward validation** — each fold is preceded only by past data, so no future information leaks into training.
 
 ```
 Seed(20%)  Fold1  Fold2  Fold3  Fold4  Fold5
@@ -274,12 +143,10 @@ Seed(20%)  Fold1  Fold2  Fold3  Fold4  Fold5
 
 Fold 1: train = seed              → val = fold1
 Fold 2: train = seed + fold1      → val = fold2
-Fold 3: train = seed + fold1 + 2  → val = fold3
+Fold 3: train = seed + fold1-2    → val = fold3
 Fold 4: train = seed + fold1–3    → val = fold4
 Fold 5: train = seed + fold1–4    → val = fold5
 ```
-
-> **Why this matters:** The scaler is fitted on the training set only and applied to both train and test sets — eliminating data leakage. The temporal split ensures the test set always follows the training set chronologically.
 
 ---
 
@@ -291,7 +158,5 @@ atspR: Automated Time-Series Preprocessing in R.
 R package version 1.0.0.
 https://github.com/EasternTechFusion/atspR
 ```
-
----
 
 *MIT © 2024 · [GitHub Repository](https://github.com/EasternTechFusion/atspR)*
