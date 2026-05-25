@@ -425,9 +425,91 @@ scaling for skewed distributions, and MinMax otherwise.</p>
 <div class="section level2">
 <h2 id="export-results">Export Results<a class="anchor" aria-label="anchor" href="#export-results"></a>
 </h2>
+<p>Use <code><a href="../reference/ts_export.html">ts_export()</a></code> to write the pipeline outputs to CSV
+files.</p>
+<div class="section level3">
+<h3 id="basic-usage">Basic usage<a class="anchor" aria-label="anchor" href="#basic-usage"></a>
+</h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/ts_export.html">ts_export</a></span><span class="op">(</span><span class="va">result</span>, dir <span class="op">=</span> <span class="st">"C:/Users/user/"</span>, prefix <span class="op">=</span> <span class="st">"data"</span><span class="op">)</span></span></code></pre></div>
-<p>This writes four files to the specified directory:</p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ts_export.html">ts_export</a></span><span class="op">(</span><span class="va">result</span>, dir <span class="op">=</span> <span class="st">"atspR_output"</span>, prefix <span class="op">=</span> <span class="st">"atspR"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="full-signature">Full signature<a class="anchor" aria-label="anchor" href="#full-signature"></a>
+</h3>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ts_export.html">ts_export</a></span><span class="op">(</span><span class="va">result</span>,</span>
+<span>          dir           <span class="op">=</span> <span class="st">"atspR_output"</span>,</span>
+<span>          prefix        <span class="op">=</span> <span class="st">"atspR"</span>,</span>
+<span>          export_clean  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>          export_report <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>          verbose       <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="parameters">Parameters<a class="anchor" aria-label="anchor" href="#parameters"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>result</code></td>
+<td>list</td>
+<td>—</td>
+<td>The list returned by <code><a href="../reference/ts_preprocess.html">ts_preprocess()</a></code>
+</td>
+</tr>
+<tr class="even">
+<td><code>dir</code></td>
+<td>character</td>
+<td><code>"atspR_output"</code></td>
+<td>Output directory; created automatically if it does not exist</td>
+</tr>
+<tr class="odd">
+<td><code>prefix</code></td>
+<td>character</td>
+<td><code>"atspR"</code></td>
+<td>Filename prefix applied to all exported files</td>
+</tr>
+<tr class="even">
+<td><code>export_clean</code></td>
+<td>logical</td>
+<td><code>TRUE</code></td>
+<td>Also export <code>data_clean</code> (cleaned data before
+scaling)</td>
+</tr>
+<tr class="odd">
+<td><code>export_report</code></td>
+<td>logical</td>
+<td><code>FALSE</code></td>
+<td>Also export <code>missing_report</code>, <code>scale_params</code>,
+<code>cv_summary</code>, and <code>cv_folds</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>verbose</code></td>
+<td>logical</td>
+<td><code>TRUE</code></td>
+<td>Print exported file paths to the console</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="output-files">Output files<a class="anchor" aria-label="anchor" href="#output-files"></a>
+</h3>
+<p>Files are always written as <code>{prefix}_{name}.csv</code> inside
+<code>dir</code>.</p>
+<p><strong>Always exported:</strong></p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -439,24 +521,82 @@ scaling for skewed distributions, and MinMax otherwise.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code>data_train.csv</code></td>
-<td>Scaled training set</td>
+<td><code>{prefix}_train_scaled.csv</code></td>
+<td>Scaled training set — ready for modelling</td>
 </tr>
 <tr class="even">
-<td><code>data_test.csv</code></td>
+<td><code>{prefix}_test_scaled.csv</code></td>
 <td>Scaled test set</td>
-</tr>
-<tr class="odd">
-<td><code>data_cv_folds.csv</code></td>
-<td>Walk-forward CV fold assignments</td>
-</tr>
-<tr class="even">
-<td><code>data_preprocessing_report.csv</code></td>
-<td>Full log of every automated decision</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Exported when <code>export_clean = TRUE</code>
+(default):</strong></p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>File</th>
+<th>Contents</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td><code>{prefix}_data_clean.csv</code></td>
+<td>Cleaned data before scaling (imputed, rows dropped)</td>
+</tr></tbody>
+</table>
+<p><strong>Exported when <code>export_report = TRUE</code>:</strong></p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>File</th>
+<th>Contents</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>{prefix}_missing_report.csv</code></td>
+<td>Per-variable NA summary from <code><a href="../reference/missing_analysis.html">missing_analysis()</a></code>
+</td>
+</tr>
+<tr class="even">
+<td><code>{prefix}_scale_params.csv</code></td>
+<td>Scaling parameters fitted on the training set</td>
+</tr>
+<tr class="odd">
+<td><code>{prefix}_cv_summary.csv</code></td>
+<td>Cross-validation summary (if CV was run)</td>
+</tr>
+<tr class="even">
+<td><code>{prefix}_cv_folds.csv</code></td>
+<td>Per-fold CV results (if CV was run)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="example-export-everything">Example — export everything<a class="anchor" aria-label="anchor" href="#example-export-everything"></a>
+</h3>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ts_export.html">ts_export</a></span><span class="op">(</span><span class="va">result</span>,</span>
+<span>          dir           <span class="op">=</span> <span class="st">"C:/Users/user/project/output"</span>,</span>
+<span>          prefix        <span class="op">=</span> <span class="st">"vpd_model"</span>,</span>
+<span>          export_clean  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>          export_report <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>This produces up to seven files,
+e.g. <code>vpd_model_train_scaled.csv</code>,
+<code>vpd_model_missing_report.csv</code>, etc.</p>
+<blockquote>
+<p><code><a href="../reference/ts_export.html">ts_export()</a></code> returns a named character vector of exported
+file paths invisibly, so you can capture it with
+<code>paths &lt;- ts_export(result, ...)</code> for programmatic
+use.</p>
+</blockquote>
 <hr>
+</div>
 </div>
 <div class="section level2">
 <h2 id="cross-validation">Cross-Validation<a class="anchor" aria-label="anchor" href="#cross-validation"></a>

@@ -185,19 +185,84 @@ result <- ts_preprocess(data        = gap$data,
 
 ## Export Results
 
+Use
+[`ts_export()`](https://easterntechfusion.github.io/atspR/reference/ts_export.md)
+to write the pipeline outputs to CSV files.
+
+### Basic usage
+
 ``` r
 
-ts_export(result, dir = "C:/Users/user/", prefix = "data")
+ts_export(result, dir = "atspR_output", prefix = "atspR")
 ```
 
-This writes four files to the specified directory:
+### Full signature
 
-| File                            | Contents                             |
-|---------------------------------|--------------------------------------|
-| `data_train.csv`                | Scaled training set                  |
-| `data_test.csv`                 | Scaled test set                      |
-| `data_cv_folds.csv`             | Walk-forward CV fold assignments     |
-| `data_preprocessing_report.csv` | Full log of every automated decision |
+``` r
+
+ts_export(result,
+          dir           = "atspR_output",
+          prefix        = "atspR",
+          export_clean  = TRUE,
+          export_report = FALSE,
+          verbose       = TRUE)
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|----|----|----|----|
+| `result` | list | — | The list returned by [`ts_preprocess()`](https://easterntechfusion.github.io/atspR/reference/ts_preprocess.md) |
+| `dir` | character | `"atspR_output"` | Output directory; created automatically if it does not exist |
+| `prefix` | character | `"atspR"` | Filename prefix applied to all exported files |
+| `export_clean` | logical | `TRUE` | Also export `data_clean` (cleaned data before scaling) |
+| `export_report` | logical | `FALSE` | Also export `missing_report`, `scale_params`, `cv_summary`, and `cv_folds` |
+| `verbose` | logical | `TRUE` | Print exported file paths to the console |
+
+### Output files
+
+Files are always written as `{prefix}_{name}.csv` inside `dir`.
+
+**Always exported:**
+
+| File                        | Contents                                  |
+|-----------------------------|-------------------------------------------|
+| `{prefix}_train_scaled.csv` | Scaled training set — ready for modelling |
+| `{prefix}_test_scaled.csv`  | Scaled test set                           |
+
+**Exported when `export_clean = TRUE` (default):**
+
+| File | Contents |
+|----|----|
+| `{prefix}_data_clean.csv` | Cleaned data before scaling (imputed, rows dropped) |
+
+**Exported when `export_report = TRUE`:**
+
+| File | Contents |
+|----|----|
+| `{prefix}_missing_report.csv` | Per-variable NA summary from [`missing_analysis()`](https://easterntechfusion.github.io/atspR/reference/missing_analysis.md) |
+| `{prefix}_scale_params.csv` | Scaling parameters fitted on the training set |
+| `{prefix}_cv_summary.csv` | Cross-validation summary (if CV was run) |
+| `{prefix}_cv_folds.csv` | Per-fold CV results (if CV was run) |
+
+### Example — export everything
+
+``` r
+
+ts_export(result,
+          dir           = "C:/Users/user/project/output",
+          prefix        = "vpd_model",
+          export_clean  = TRUE,
+          export_report = TRUE)
+```
+
+This produces up to seven files, e.g. `vpd_model_train_scaled.csv`,
+`vpd_model_missing_report.csv`, etc.
+
+> [`ts_export()`](https://easterntechfusion.github.io/atspR/reference/ts_export.md)
+> returns a named character vector of exported file paths invisibly, so
+> you can capture it with `paths <- ts_export(result, ...)` for
+> programmatic use.
 
 ------------------------------------------------------------------------
 
