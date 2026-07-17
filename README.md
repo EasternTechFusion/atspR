@@ -63,6 +63,8 @@ devtools::install_github("EasternTechFusion/atspR")
 ```
 
 ## Quick Start
+> **Note:** Column names must not contain parentheses `(` `)` or the package will fail to parse them.
+> For example, rename `WaterLevel()` to `WaterLevel` before passing the data to `atspR` functions.
 
 ## Univariate
 **Sample data**
