@@ -12,6 +12,10 @@ cross_validate(
   train = NULL,
   target_col,
   model_fn = NULL,
+  model_type = c("lm", "gam", "rf", "dt"),
+  rf_ntree = 500L,
+  dt_cp = 0.01,
+  lags = 1L,
   k = 5L,
   min_train_size = 0.2,
   verbose = TRUE
@@ -39,8 +43,75 @@ cross_validate(
 
   Function with signature `function(train_fold, val_fold)`. Must return
   a named numeric vector / list that includes at least one performance
-  metric (e.g. `c(RMSE = ..., MAE = ..., R2 = ...)`). A simple
-  linear-regression default is provided when `NULL`.
+  metric (e.g. `c(RMSE = ..., MAE = ..., R2 = ...)`). When `NULL` (the
+  default), a built-in model is used instead, chosen via `model_type`.
+  Supplying `model_fn` overrides `model_type` entirely.
+
+- model_type:
+
+  Character. Which built-in default model to use when `model_fn` is
+  `NULL`. One of:
+
+  `"lm"`
+
+  :   (default) Plain linear regression via
+      [`stats::lm()`](https://rdrr.io/r/stats/lm.html): numeric
+      predictors enter additively (no smoothing), non-numeric predictors
+      are coerced to [`factor()`](https://rdrr.io/r/base/factor.html). A
+      simple, fast baseline.
+
+  `"gam"`
+
+  :   [`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html). Every
+      numeric predictor is fit with a smooth term `s(x, k = ...)` (basis
+      dimension auto-capped to the number of unique values in the
+      training fold) and every non-numeric predictor is coerced to
+      [`factor()`](https://rdrr.io/r/base/factor.html). This captures
+      non-linear trend/seasonality (e.g. water level, VPD) far better
+      than a plain linear fit.
+
+  `"rf"`
+
+  :   Random Forest via `randomForest::randomForest()`. `ntree` is
+      controlled by `rf_ntree` (default 500).
+
+  `"dt"`
+
+  :   Decision Tree via
+      [`rpart::rpart()`](https://rdrr.io/pkg/rpart/man/rpart.html). Tree
+      complexity is controlled by `dt_cp` (default 0.01).
+
+  All four built-ins share the same predictor handling: date/POSIXct/
+  difftime columns are coerced to numeric, and a `.time_index` fallback
+  predictor is used if `target_col` is the only column present. Set
+  `model_type = "gam"` if the series is expected to be non-linear (e.g.
+  water level, VPD) – the plain `"lm"` default may under-fit those
+  cases.
+
+- rf_ntree:
+
+  Integer. Number of trees for `model_type = "rf"` (default 500).
+  Ignored otherwise.
+
+- dt_cp:
+
+  Numeric. Complexity parameter for `model_type = "dt"` (default 0.01).
+  Ignored otherwise.
+
+- lags:
+
+  Integer vector (or `NULL`). Only used in the univariate fallback case
+  – when `target_col` is the only column present, or every other column
+  is a date/time stamp (e.g. a `WaterLevel` column plus its `DateTime`).
+  Adds lagged copies of the target as extra predictors – e.g. `lags = 1`
+  adds `.lag1` (the previous row's value); `lags = c(1, 2, 3)` adds
+  `.lag1`, `.lag2`, `.lag3`. Lags are computed across the seed +
+  prior-fold data and the current validation fold together (a single
+  continuous time series), so validation rows always get real historical
+  values, never ones leaking from later in time. Rows in the training
+  fold whose lag would reach before the start of the series are dropped
+  (only affects the earliest `max(lags)` rows of the very first fold).
+  Default `1L`; set to `NULL` to disable.
 
 - k:
 
@@ -84,6 +155,10 @@ An invisible list with elements:
 
   Response column name.
 
+- `model_type`:
+
+  Which built-in model was used (`"custom"` if `model_fn` was supplied).
+
 ## Details
 
 A seed training set of size `min_train_size` is reserved from the start
@@ -103,7 +178,7 @@ cv    <- cross_validate(sc, target_col = "Ozone", k = 5)
 #>   STEP : Walk-Forward Cross-Validation  (k = 5)
 #> ============================================================
 #> 
-#>   Target : Ozone  |  Seed: 17 rows (20%)  |  Folds: 5 (~14 rows each)
+#>   Target : Ozone  |  Model: LM  |  Seed: 17 rows (20%)  |  Folds: 5 (~14 rows each)
 #> 
 #> ------------------------------------------------------------
 #>   Results per fold

@@ -44,6 +44,10 @@ ts_preprocess(
   target_col = NULL,
   k_folds = 5L,
   model_fn = NULL,
+  model_type = c("lm", "gam", "rf", "dt"),
+  rf_ntree = 500L,
+  dt_cp = 0.01,
+  lags = 1L,
   verbose = TRUE
 )
 ```
@@ -97,6 +101,33 @@ ts_preprocess(
 
   Optional custom model function for CV.
 
+- model_type:
+
+  Character. Which built-in default CV model to use when `model_fn` is
+  `NULL`: `"lm"` (default, plain linear regression), `"gam"`
+  (smooth/non-linear fit – recommended if the series is expected to be
+  non-linear, e.g. water level or VPD), `"rf"` (Random Forest), or
+  `"dt"` (Decision Tree). Passed straight through to
+  [`cross_validate()`](https://easterntechfusion.github.io/atspR/reference/cross_validate.md).
+
+- rf_ntree:
+
+  Integer. Number of trees when `model_type = "rf"` (default 500).
+
+- dt_cp:
+
+  Numeric. Complexity parameter when `model_type = "dt"` (default 0.01).
+
+- lags:
+
+  Integer vector (or `NULL`). Only used in CV's single-variable fallback
+  case (`target_col` is the only predictor available). Adds lagged
+  copies of the target as extra predictors – e.g. `lags = 1` (default)
+  adds `.lag1`, the previous row's value. Passed straight through to
+  [`cross_validate()`](https://easterntechfusion.github.io/atspR/reference/cross_validate.md);
+  see its docs for details. Set to `NULL` to disable and fall back to
+  `.time_index` only.
+
 - verbose:
 
   Logical (default `TRUE`).
@@ -149,6 +180,11 @@ An invisible list with elements:
 
   Per-fold CV results, or NULL if skipped.
 
+- `cv_model_type`:
+
+  Which CV model was used (`"custom"` if `model_fn` was supplied), or
+  NULL if CV was skipped.
+
 - `plots`:
 
   Named list: boxplot, scatter.
@@ -174,7 +210,7 @@ result <- ts_preprocess(
 #> ============================================================
 #> 
 #>   Input : 153 rows, 6 cols  |  Train/Test: 80%/20%  |  Impute: linear  |  Scale: minmax
-#>   CV    : target = none (skipped),  k = 5
+#>   CV    : target = none (skipped),  k = 5,  model = LM
 #> ------------------------------------------------------------
 
 
@@ -233,7 +269,7 @@ result <- ts_preprocess(
 #> ============================================================
 #> 
 #>   Input : 153 rows, 6 cols  |  Train/Test: 80%/20%  |  Impute: linear  |  Scale: minmax
-#>   CV    : target = none (skipped),  k = 5
+#>   CV    : target = none (skipped),  k = 5,  model = LM
 #> ------------------------------------------------------------
 
 

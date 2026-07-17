@@ -53,6 +53,10 @@ only by past data, so no future information leaks into training.</p>
 <span>  train <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">target_col</span>,</span>
 <span>  model_fn <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  model_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lm"</span>, <span class="st">"gam"</span>, <span class="st">"rf"</span>, <span class="st">"dt"</span><span class="op">)</span>,</span>
+<span>  rf_ntree <span class="op">=</span> <span class="fl">500L</span>,</span>
+<span>  dt_cp <span class="op">=</span> <span class="fl">0.01</span>,</span>
+<span>  lags <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  min_train_size <span class="op">=</span> <span class="fl">0.2</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -80,7 +84,63 @@ only by past data, so no future information leaks into training.</p>
 <dd><p>Function with signature <code>function(train_fold, val_fold)</code>.
 Must return a named numeric vector / list that includes at least one
 performance metric (e.g. <code>c(RMSE = ..., MAE = ..., R2 = ...)</code>).
-A simple linear-regression default is provided when <code>NULL</code>.</p></dd>
+When <code>NULL</code> (the default), a built-in model is used instead, chosen via
+<code>model_type</code>. Supplying <code>model_fn</code> overrides <code>model_type</code> entirely.</p></dd>
+
+
+<dt id="arg-model-type">model_type<a class="anchor" aria-label="anchor" href="#arg-model-type"></a></dt>
+<dd><p>Character. Which built-in default model to use when
+<code>model_fn</code> is <code>NULL</code>. One of:</p><dl><dt><code>"lm"</code></dt>
+<dd><p>(default) Plain linear regression via <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">stats::lm()</a></code>:
+numeric predictors enter additively (no smoothing), non-numeric
+predictors are coerced to <code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>. A simple, fast baseline.</p></dd>
+
+<dt><code>"gam"</code></dt>
+<dd><p><code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>. Every numeric predictor is fit
+with a smooth term <code>s(x, k = ...)</code> (basis dimension auto-capped to
+the number of unique values in the training fold) and every
+non-numeric predictor is coerced to <code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>. This captures
+non-linear trend/seasonality (e.g. water level, VPD) far better than
+a plain linear fit.</p></dd>
+
+<dt><code>"rf"</code></dt>
+<dd><p>Random Forest via <code>randomForest::randomForest()</code>.
+<code>ntree</code> is controlled by <code>rf_ntree</code> (default 500).</p></dd>
+
+<dt><code>"dt"</code></dt>
+<dd><p>Decision Tree via <code><a href="https://rdrr.io/pkg/rpart/man/rpart.html" class="external-link">rpart::rpart()</a></code>. Tree complexity is
+controlled by <code>dt_cp</code> (default 0.01).</p></dd>
+
+
+</dl><p>All four built-ins share the same predictor handling: date/POSIXct/
+difftime columns are coerced to numeric, and a <code>.time_index</code> fallback
+predictor is used if <code>target_col</code> is the only column present. Set
+<code>model_type = "gam"</code> if the series is expected to be non-linear (e.g.
+water level, VPD) – the plain <code>"lm"</code> default may under-fit those cases.</p></dd>
+
+
+<dt id="arg-rf-ntree">rf_ntree<a class="anchor" aria-label="anchor" href="#arg-rf-ntree"></a></dt>
+<dd><p>Integer. Number of trees for <code>model_type = "rf"</code>
+(default 500). Ignored otherwise.</p></dd>
+
+
+<dt id="arg-dt-cp">dt_cp<a class="anchor" aria-label="anchor" href="#arg-dt-cp"></a></dt>
+<dd><p>Numeric. Complexity parameter for <code>model_type = "dt"</code>
+(default 0.01). Ignored otherwise.</p></dd>
+
+
+<dt id="arg-lags">lags<a class="anchor" aria-label="anchor" href="#arg-lags"></a></dt>
+<dd><p>Integer vector (or <code>NULL</code>). Only used in the univariate
+fallback case – when <code>target_col</code> is the only column present, or every
+other column is a date/time stamp (e.g. a <code>WaterLevel</code> column plus its
+<code>DateTime</code>). Adds lagged copies of the target as extra predictors –
+e.g. <code>lags = 1</code> adds <code>.lag1</code> (the previous row's value); <code>lags = c(1, 2, 3)</code> adds <code>.lag1</code>, <code>.lag2</code>, <code>.lag3</code>. Lags are computed across the
+seed + prior-fold data and the current validation fold together (a
+single continuous time series), so validation rows always get real
+historical values, never ones leaking from later in time. Rows in the
+training fold whose lag would reach before the start of the series are
+dropped (only affects the earliest <code>max(lags)</code> rows of the very first
+fold). Default <code>1L</code>; set to <code>NULL</code> to disable.</p></dd>
 
 
 <dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
@@ -117,6 +177,10 @@ This ensures fold 1 always has training data available.</p></dd>
 <dt><code>target_col</code></dt>
 <dd><p>Response column name.</p></dd>
 
+<dt><code>model_type</code></dt>
+<dd><p>Which built-in model was used (<code>"custom"</code> if
+<code>model_fn</code> was supplied).</p></dd>
+
 
 </dl></div>
     <div class="section level2">
@@ -138,7 +202,7 @@ enough data to train on.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   STEP : Walk-Forward Cross-Validation  (k = 5)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ============================================================</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Target : Ozone  |  Seed: 17 rows (20%)  |  Folds: 5 (~14 rows each)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Target : Ozone  |  Model: LM  |  Seed: 17 rows (20%)  |  Folds: 5 (~14 rows each)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Results per fold</span>
@@ -181,7 +245,7 @@ enough data to train on.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>
