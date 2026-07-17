@@ -19,6 +19,33 @@ output:
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
+---
+
+## Pipeline
+
+```
+Raw data
+   │
+   ├─ (Stage 1) combine_datetime()      Merge date + time columns → POSIXct (optional)
+   ├─ (Stage 2) fill_time_gaps()        Insert placeholder rows for missing timestamps
+   │
+   └─ ts_preprocess()                   ────────────────── 8 steps ──────────────────────────────
+   │    (Stage 3) standardize_na()      Convert sentinel values to NA
+   │    (Stage 4) coerce_numeric()      Parse character columns to numeric
+   │    (Stage 5) split_data()          Temporal train/test split
+   │    (Stage 6) missing_analysis()    Summarise NAs; decide DROP or IMPUTE
+   │    (Stage 7) handle_missing()      Drop rows or interpolate (linear/KNN)
+   │    (Stage 8) visualize_data()      Scatter plots per variable vs time
+   │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
+   │    (Stage 10) cross_validate()     Walk-forward k-fold CV (optional) — choose one : 
+   |                                    Linear Regression (lm)/ Generalized Additive Model (gam)/
+   │                                    Random Forest (rf)/ Decision Tree (dt)
+   │
+   └─ ts_export()                       Write all outputs to CSV
+```
+
+---
+
 ## Installation
 
 ```r
@@ -27,33 +54,33 @@ devtools::install_github("EasternTechFusion/atspR")
 library(atspR)
 ```
 
----
-
-## Pipeline
-
-```
-Raw data
-   │
-   ├─ (Stage 1)  combine_datetime()   [optional] Merge date + time → POSIXct
-   ├─ (Stage 2)  fill_time_gaps()     Insert placeholder rows for missing timestamps
-   │
-   └─ ts_preprocess() ─────────────────────────────────────────────────────────
-        (Stage 3)  standardize_na()   Convert sentinel values to NA
-        (Stage 4)  coerce_numeric()   Parse character columns to numeric
-        (Stage 5)  split_data()       Temporal train/test split
-        (Stage 6)  missing_analysis() Summarise NAs; decide DROP or IMPUTE
-        (Stage 7)  handle_missing()   Drop rows or interpolate (linear/KNN)
-        (Stage 8)  visualize_data()   Scatter plots per variable vs time
-        (Stage 9)  scale_data()       MinMax / Z-score / Robust (auto)
-        (Stage 10) cross_validate()   [optional] Walk-forward k-fold CV
-   │
-   └─ ts_export()  Write all outputs to CSV
-```
-
----
-
 ## Quick Start
+> **Note:** Column names must not contain parentheses `(` `)` or the package will fail to parse them.
+> For example, rename `WaterLevel()` to `WaterLevel` before passing the data to `atspR` functions.
 
+
+## Univariate
+
+```r
+library(atspR)
+
+df$datetime <- as.POSIXct(df$datetime, 
+                          format = "%Y-%m-%d %H:%M:%S")
+
+gap <- fill_time_gaps(df,
+                      time_col = "DateTime",
+                      n        = 10,
+                      unit     = "min")
+
+result <- ts_preprocess(data          = gap$data,
+                        train_ratio   = 0.8,
+                        impute_method = "linear",
+                        lags          = 24,
+                        model_type    = "lm",
+                        target_col    = "WaterLevel",
+                        k_folds       = 5)
+```
+## Multivariate
 ### Case 1: Date + Time in separate columns
 
 ```r
@@ -155,7 +182,7 @@ Fold 5: train = seed + fold1–4    → val = fold5
 ```
 Sueppong Mueanchamnong and Pattharaporn Thongnim (2026).
 atspR: Automated Time-Series Preprocessing in R.
-R package version 1.0.0.
+R package version 1.1.0.
 https://github.com/EasternTechFusion/atspR
 ```
 
