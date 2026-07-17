@@ -31,10 +31,10 @@ The package is designed for students and domain practitioners (agronomists, envi
 ```
 Raw data
    │
-   ├─ (Stage 1) combine_datetime()      Merge date + time columns → POSIXct (optional)
+   ├─ (Stage 1) combine_datetime()      Merge date + time columns → POSIXct (optional For Use)
    ├─ (Stage 2) fill_time_gaps()        Insert placeholder rows for missing timestamps
    │
-   └─ ts_preprocess()                   ────────────────── 8 steps ──────────────────
+   └─ ts_preprocess()                   ────────────────── 8 steps ───────────────────────────
    │    (Stage 3) standardize_na()      Convert sentinel values to NA
    │    (Stage 4) coerce_numeric()      Parse character columns to numeric
    │    (Stage 5) split_data()          Temporal train/test split
@@ -42,7 +42,9 @@ Raw data
    │    (Stage 7) handle_missing()      Drop rows or interpolate (linear/KNN)
    │    (Stage 8) visualize_data()      Scatter plots per variable vs time
    │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
-   │    (Stage 10) cross_validate()     Walk-forward k-fold CV (optional)
+   │    (Stage 10) cross_validate()     Walk-forward k-fold CV — Linear Regression / 
+   │                                    Generalized Additive Model / Random Forest / 
+   │                                    Decision Tree (optional For Use)
    │
    └─ ts_export()                       Write all outputs to CSV
 ```
