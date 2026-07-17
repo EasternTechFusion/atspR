@@ -93,7 +93,7 @@
 </tr>
 <tr>
 <td>Multi-package workflow, easy to sequence incorrectly</td>
-<td>Single function <code><a href="reference/ts_preprocess.html">ts_preprocess()</a></code> runs all 7 steps in order</td>
+<td>Single function <code><a href="reference/ts_preprocess.html">ts_preprocess()</a></code> runs all 8 steps in order</td>
 </tr>
 <tr>
 <td>Error messages with no guidance</td>
@@ -122,7 +122,7 @@
    │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
    │    (Stage 10) cross_validate()     Walk-forward k-fold CV — Linear Regression /
    │                                    Generalized Additive Model / Random Forest /
-   │                                    Decision Tree (optional For Use)
+   │                                    Decision Tree (Choose One)
    │
    └─ ts_export()                       Write all outputs to CSV</code></pre>
 <hr>
@@ -137,6 +137,76 @@
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+</h2>
+</div>
+<div class="section level2">
+<h2 id="univariate">univariate<a class="anchor" aria-label="anchor" href="#univariate"></a>
+</h2>
+<p><strong>Sample data</strong></p>
+<table class="table">
+<thead><tr>
+<th>DateTime</th>
+<th>WaterLevel</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>2024-01-01 08:00</td>
+<td>3.31</td>
+</tr>
+<tr>
+<td>2024-01-01 08:10</td>
+<td>3.37</td>
+</tr>
+<tr>
+<td>2024-01-01 08:20</td>
+<td>3.46</td>
+</tr>
+<tr>
+<td>2024-01-01 08:33</td>
+<td>3.53</td>
+</tr>
+<tr>
+<td>2024-01-01 08:42</td>
+<td>3.56</td>
+</tr>
+<tr>
+<td>2024-01-01 08:59</td>
+<td>3.58</td>
+</tr>
+<tr>
+<td>2024-01-01 09:10</td>
+<td>3.60</td>
+</tr>
+<tr>
+<td>2024-01-01 09:24</td>
+<td>3.62</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Raw sensor readings arrive at irregular intervals (roughly every 10 minutes) — <code><a href="reference/fill_time_gaps.html">fill_time_gaps()</a></code> snaps them onto a regular 10-minute grid, inserting <code>NA</code> for any grid point with no matching reading. This dataset has only one variable (<code>WaterLevel</code>), so <code><a href="reference/ts_preprocess.html">ts_preprocess()</a></code> runs in univariate mode — no exogenous features are used.</p>
+</blockquote>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span>, </span>
+<span>                          format <span class="op">=</span> <span class="st">"%Y-%m-%d %H:%M:%S"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">gap</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fill_time_gaps.html">fill_time_gaps</a></span><span class="op">(</span><span class="va">df</span>,</span>
+<span>                      time_col <span class="op">=</span> <span class="st">"DateTime"</span>,</span>
+<span>                      n        <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>                      unit     <span class="op">=</span> <span class="st">"min"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ts_preprocess.html">ts_preprocess</a></span><span class="op">(</span>data          <span class="op">=</span> <span class="va">gap</span><span class="op">$</span><span class="va">data</span>,</span>
+<span>                        train_ratio   <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>                        impute_method <span class="op">=</span> <span class="st">"linear"</span>,</span>
+<span>                        lags          <span class="op">=</span> <span class="fl">24</span>,</span>
+<span>                        model_type    <span class="op">=</span> <span class="st">"lm"</span>,</span>
+<span>                        target_col    <span class="op">=</span> <span class="st">"WaterLevel"</span>,</span>
+<span>                        k_folds       <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="multivariate">multivariate<a class="anchor" aria-label="anchor" href="#multivariate"></a>
 </h2>
 <div class="section level3">
 <h3 id="case-1-date--time-in-separate-columns">Case 1: Date + Time in separate columns<a class="anchor" aria-label="anchor" href="#case-1-date--time-in-separate-columns"></a>
@@ -215,7 +285,7 @@
 <blockquote>
 <p>Hour 10:00 is missing entirely — <code><a href="reference/fill_time_gaps.html">fill_time_gaps()</a></code> will insert it as a row of <code>NA</code>.</p>
 </blockquote>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/combine_datetime.html">combine_datetime</a></span><span class="op">(</span><span class="va">my_data</span>,</span>
@@ -305,7 +375,7 @@
 <blockquote>
 <p>Hour 10:00 is missing entirely — <code><a href="reference/fill_time_gaps.html">fill_time_gaps()</a></code> will insert it as a row of <code>NA</code>.</p>
 </blockquote>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span>, </span>
@@ -392,7 +462,7 @@
 <blockquote>
 <p>2024-01-03 is missing entirely — <code><a href="reference/fill_time_gaps.html">fill_time_gaps()</a></code> will insert it as a row of <code>NA</code>.</p>
 </blockquote>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">gap</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fill_time_gaps.html">fill_time_gaps</a></span><span class="op">(</span><span class="va">df</span>, </span>
@@ -409,7 +479,7 @@
 <div class="section level2">
 <h2 id="export-results">Export Results<a class="anchor" aria-label="anchor" href="#export-results"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">ts_export</span>(result, <span class="at">dir =</span> <span class="st">"C:\Users\user</span><span class="sc">\"</span><span class="st">, prefix = "</span>data<span class="st">")</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">ts_export</span>(result, <span class="at">dir =</span> <span class="st">"C:\Users\user</span><span class="sc">\"</span><span class="st">, prefix = "</span>data<span class="st">")</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="cross-validation">Cross-Validation<a class="anchor" aria-label="anchor" href="#cross-validation"></a>
