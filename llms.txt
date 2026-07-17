@@ -61,7 +61,7 @@ devtools::install_github("EasternTechFusion/atspR")
 
 ## Quick Start
 
-## univariate
+## Univariate
 
 **Sample data**
 
@@ -107,7 +107,7 @@ result <- ts_preprocess(data          = gap$data,
                         k_folds       = 5)
 ```
 
-## multivariate
+## Multivariate
 
 ### Case 1: Date + Time in separate columns
 
