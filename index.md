@@ -24,7 +24,7 @@ sequencing of steps.
 | Irregular sensor timestamps break time-series assumptions | [`fill_time_gaps()`](https://easterntechfusion.github.io/atspR/reference/fill_time_gaps.md) snaps data onto a **regular time grid**, flagging missing points as `NA` |
 | Silent NA removal with no record | Full report of what was dropped or imputed, and why |
 | Multi-package workflow, easy to sequence incorrectly | Single function [`ts_preprocess()`](https://easterntechfusion.github.io/atspR/reference/ts_preprocess.md) runs all 8 steps in order |
-| One-size-fits-all model choice | [`cross_validate()`](https://easterntechfusion.github.io/atspR/reference/cross_validate.md) supports multiple model types (**lm / gam / rf / dt**) |
+| One-size-fits-all model choice | [`cross_validate()`](https://easterntechfusion.github.io/atspR/reference/cross_validate.md) supports multiple model types (**Linear Regression (lm) / Generalized Additive Model (gam) / Random Forest (rf)/ Decision Tree (dt)**) |
 | Error messages with no guidance | Every automated decision explained in plain-language output |
 
 ------------------------------------------------------------------------
@@ -115,12 +115,12 @@ result <- ts_preprocess(data          = gap$data,
 
 **Sample data**
 
-| Date       | Time  | Temp  | Humid | Solar   | WindDirection | WindSpeed | RainFall | VPD    |
-|------------|-------|-------|-------|---------|---------------|-----------|----------|--------|
-| 2024-01-01 | 08:00 | 25.12 | 80.04 | 14.0591 | 94.8218       | 0.0000    | 0.0000   | 0.2758 |
-| 2024-01-01 | 09:00 | NA    | 82.38 | 18.3274 | 91.2340       | 0.5200    | 0.0000   | 0.3124 |
-| 2024-01-01 | 11:00 | 26.26 | 85.03 | 22.7810 | 88.6500       | 1.1400    | 0.0000   | 0.3892 |
-| 2024-01-01 | 12:00 | 27.07 | 83.57 | NA      | 90.1200       | 1.3300    | 0.1200   | 0.4015 |
+| Date       | Time  | Temp  | Humid | Solar   | WindSpeed | RainFall | VPD    |
+|------------|-------|-------|-------|---------|-----------|----------|--------|
+| 2024-01-01 | 08:00 | 25.12 | 80.04 | 14.0591 | 0.0000    | 0.0000   | 0.2758 |
+| 2024-01-01 | 09:00 | NA    | 82.38 | 18.3274 | 0.5200    | 0.0000   | 0.3124 |
+| 2024-01-01 | 11:00 | 26.26 | 85.03 | 22.7810 | 1.1400    | 0.0000   | 0.3892 |
+| 2024-01-01 | 12:00 | 27.07 | 83.57 | NA      | 1.3300    | 0.1200   | 0.4015 |
 
 > Hour 10:00 is missing entirely —
 > [`fill_time_gaps()`](https://easterntechfusion.github.io/atspR/reference/fill_time_gaps.md)
@@ -151,12 +151,12 @@ result <- ts_preprocess(data         = gap$data,
 
 **Sample data**
 
-| DateTime         | Temp  | Humid | Solar   | WindDirection | WindSpeed | RainFall | VPD    |
-|------------------|-------|-------|---------|---------------|-----------|----------|--------|
-| 2024-01-01 08:00 | 25.12 | 80.04 | 14.0591 | 94.8218       | 0.0000    | 0.0000   | 0.2758 |
-| 2024-01-01 09:00 | NA    | 82.38 | 18.3274 | 91.2340       | 0.5200    | 0.0000   | 0.3124 |
-| 2024-01-01 11:00 | 26.26 | 85.03 | 22.7810 | 88.6500       | 1.1400    | 0.0000   | 0.3892 |
-| 2024-01-01 12:00 | 27.07 | 83.57 | NA      | 90.1200       | 1.3300    | 0.1200   | 0.4015 |
+| DateTime         | Temp  | Humid | Solar   | WindSpeed | RainFall | VPD    |
+|------------------|-------|-------|---------|-----------|----------|--------|
+| 2024-01-01 08:00 | 25.12 | 80.04 | 14.0591 | 0.0000    | 0.0000   | 0.2758 |
+| 2024-01-01 09:00 | NA    | 82.38 | 18.3274 | 0.5200    | 0.0000   | 0.3124 |
+| 2024-01-01 11:00 | 26.26 | 85.03 | 22.7810 | 1.1400    | 0.0000   | 0.3892 |
+| 2024-01-01 12:00 | 27.07 | 83.57 | NA      | 1.3300    | 0.1200   | 0.4015 |
 
 > Hour 10:00 is missing entirely —
 > [`fill_time_gaps()`](https://easterntechfusion.github.io/atspR/reference/fill_time_gaps.md)
@@ -184,12 +184,12 @@ result <- ts_preprocess(data         = gap$data,
 
 **Sample data**
 
-| date       | Temp  | Humid | Solar   | WindDirection | WindSpeed | RainFall | VPD      |
-|------------|-------|-------|---------|---------------|-----------|----------|----------|
-| 2024-01-01 | 28.38 | 75.04 | 14.0591 | 94.8218       | 0.0000    | 0.0000   | 0.275835 |
-| 2024-01-02 | 29.16 | 72.05 | NA      | 91.2340       | 0.5200    | 0.0000   | 0.312410 |
-| 2024-01-04 | 27.89 | 78.03 | 22.7810 | 88.6500       | 1.1400    | 2.4000   | 0.389200 |
-| 2024-01-05 | 26.50 | 80.54 | 19.4320 | NA            | 0.8800    | 0.0000   | 0.301770 |
+| date       | Temp  | Humid | Solar   | WindSpeed | RainFall | VPD      |
+|------------|-------|-------|---------|-----------|----------|----------|
+| 2024-01-01 | 28.38 | 75.04 | 14.0591 | 0.0000    | 0.0000   | 0.275835 |
+| 2024-01-02 | 29.16 | 72.05 | NA      | 0.5200    | 0.0000   | 0.312410 |
+| 2024-01-04 | 27.89 | 78.03 | 22.7810 | 1.1400    | 2.4000   | 0.389200 |
+| 2024-01-05 | 26.50 | 80.54 | 19.4320 | 0.8800    | 0.0000   | 0.301770 |
 
 > 2024-01-03 is missing entirely —
 > [`fill_time_gaps()`](https://easterntechfusion.github.io/atspR/reference/fill_time_gaps.md)

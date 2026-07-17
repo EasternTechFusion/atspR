@@ -104,7 +104,7 @@
 <tr>
 <td>One-size-fits-all model choice</td>
 <td>
-<code><a href="reference/cross_validate.html">cross_validate()</a></code> supports multiple model types (<strong>lm / gam / rf / dt</strong>)</td>
+<code><a href="reference/cross_validate.html">cross_validate()</a></code> supports multiple model types (<strong>Linear Regression (lm) / Generalized Additive Model (gam) / Random Forest (rf)/ Decision Tree (dt)</strong>)</td>
 </tr>
 <tr>
 <td>Error messages with no guidance</td>
@@ -226,17 +226,16 @@
 <h3 id="case-1-date--time-in-separate-columns">Case 1: Date + Time in separate columns<a class="anchor" aria-label="anchor" href="#case-1-date--time-in-separate-columns"></a>
 </h3>
 <p><strong>Sample data</strong></p>
-<table class="table">
+<table style="width:100%;" class="table">
 <colgroup>
-<col width="13%">
-<col width="7%">
-<col width="9%">
+<col width="16%">
 <col width="9%">
 <col width="10%">
-<col width="17%">
+<col width="10%">
 <col width="12%">
-<col width="11%">
-<col width="9%">
+<col width="15%">
+<col width="13%">
+<col width="10%">
 </colgroup>
 <thead><tr>
 <th>Date</th>
@@ -244,7 +243,6 @@
 <th>Temp</th>
 <th>Humid</th>
 <th>Solar</th>
-<th>WindDirection</th>
 <th>WindSpeed</th>
 <th>RainFall</th>
 <th>VPD</th>
@@ -256,7 +254,6 @@
 <td>25.12</td>
 <td>80.04</td>
 <td>14.0591</td>
-<td>94.8218</td>
 <td>0.0000</td>
 <td>0.0000</td>
 <td>0.2758</td>
@@ -267,7 +264,6 @@
 <td>NA</td>
 <td>82.38</td>
 <td>18.3274</td>
-<td>91.2340</td>
 <td>0.5200</td>
 <td>0.0000</td>
 <td>0.3124</td>
@@ -278,7 +274,6 @@
 <td>26.26</td>
 <td>85.03</td>
 <td>22.7810</td>
-<td>88.6500</td>
 <td>1.1400</td>
 <td>0.0000</td>
 <td>0.3892</td>
@@ -289,7 +284,6 @@
 <td>27.07</td>
 <td>83.57</td>
 <td>NA</td>
-<td>90.1200</td>
 <td>1.3300</td>
 <td>0.1200</td>
 <td>0.4015</td>
@@ -324,21 +318,19 @@
 <p><strong>Sample data</strong></p>
 <table class="table">
 <colgroup>
-<col width="20%">
-<col width="9%">
-<col width="9%">
-<col width="10%">
-<col width="17%">
-<col width="12%">
+<col width="25%">
 <col width="11%">
-<col width="9%">
+<col width="11%">
+<col width="12%">
+<col width="15%">
+<col width="13%">
+<col width="11%">
 </colgroup>
 <thead><tr>
 <th>DateTime</th>
 <th>Temp</th>
 <th>Humid</th>
 <th>Solar</th>
-<th>WindDirection</th>
 <th>WindSpeed</th>
 <th>RainFall</th>
 <th>VPD</th>
@@ -349,7 +341,6 @@
 <td>25.12</td>
 <td>80.04</td>
 <td>14.0591</td>
-<td>94.8218</td>
 <td>0.0000</td>
 <td>0.0000</td>
 <td>0.2758</td>
@@ -359,7 +350,6 @@
 <td>NA</td>
 <td>82.38</td>
 <td>18.3274</td>
-<td>91.2340</td>
 <td>0.5200</td>
 <td>0.0000</td>
 <td>0.3124</td>
@@ -369,7 +359,6 @@
 <td>26.26</td>
 <td>85.03</td>
 <td>22.7810</td>
-<td>88.6500</td>
 <td>1.1400</td>
 <td>0.0000</td>
 <td>0.3892</td>
@@ -379,7 +368,6 @@
 <td>27.07</td>
 <td>83.57</td>
 <td>NA</td>
-<td>90.1200</td>
 <td>1.3300</td>
 <td>0.1200</td>
 <td>0.4015</td>
@@ -411,21 +399,19 @@
 <p><strong>Sample data</strong></p>
 <table class="table">
 <colgroup>
-<col width="14%">
-<col width="9%">
-<col width="9%">
-<col width="10%">
-<col width="18%">
+<col width="17%">
+<col width="11%">
+<col width="11%">
 <col width="13%">
-<col width="12%">
-<col width="12%">
+<col width="16%">
+<col width="14%">
+<col width="14%">
 </colgroup>
 <thead><tr>
 <th>date</th>
 <th>Temp</th>
 <th>Humid</th>
 <th>Solar</th>
-<th>WindDirection</th>
 <th>WindSpeed</th>
 <th>RainFall</th>
 <th>VPD</th>
@@ -436,7 +422,6 @@
 <td>28.38</td>
 <td>75.04</td>
 <td>14.0591</td>
-<td>94.8218</td>
 <td>0.0000</td>
 <td>0.0000</td>
 <td>0.275835</td>
@@ -446,7 +431,6 @@
 <td>29.16</td>
 <td>72.05</td>
 <td>NA</td>
-<td>91.2340</td>
 <td>0.5200</td>
 <td>0.0000</td>
 <td>0.312410</td>
@@ -456,7 +440,6 @@
 <td>27.89</td>
 <td>78.03</td>
 <td>22.7810</td>
-<td>88.6500</td>
 <td>1.1400</td>
 <td>2.4000</td>
 <td>0.389200</td>
@@ -466,7 +449,6 @@
 <td>26.50</td>
 <td>80.54</td>
 <td>19.4320</td>
-<td>NA</td>
 <td>0.8800</td>
 <td>0.0000</td>
 <td>0.301770</td>
