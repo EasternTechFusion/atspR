@@ -19,9 +19,12 @@ The package is designed for students and domain practitioners (agronomists, envi
 |---|---|
 | Scalers applied before splitting → **data leakage** | Scaler fitted on **TRAIN only**, applied to both sets |
 | Random split invalidates time-series models | **Temporal split** — train always precedes test chronologically |
+| Irregular sensor timestamps break time-series assumptions | `fill_time_gaps()` snaps data onto a **regular time grid**, flagging missing points as `NA` |
 | Silent NA removal with no record | Full report of what was dropped or imputed, and why |
 | Multi-package workflow, easy to sequence incorrectly | Single function `ts_preprocess()` runs all 8 steps in order |
+| One-size-fits-all model choice | `cross_validate()` supports multiple model types (**lm / gam / rf / dt**) |
 | Error messages with no guidance | Every automated decision explained in plain-language output |
+
 
 ---
 
