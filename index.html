@@ -88,12 +88,23 @@
 <strong>Temporal split</strong> — train always precedes test chronologically</td>
 </tr>
 <tr>
+<td>Irregular sensor timestamps break time-series assumptions</td>
+<td>
+<code><a href="reference/fill_time_gaps.html">fill_time_gaps()</a></code> snaps data onto a <strong>regular time grid</strong>, flagging missing points as <code>NA</code>
+</td>
+</tr>
+<tr>
 <td>Silent NA removal with no record</td>
 <td>Full report of what was dropped or imputed, and why</td>
 </tr>
 <tr>
 <td>Multi-package workflow, easy to sequence incorrectly</td>
 <td>Single function <code><a href="reference/ts_preprocess.html">ts_preprocess()</a></code> runs all 8 steps in order</td>
+</tr>
+<tr>
+<td>One-size-fits-all model choice</td>
+<td>
+<code><a href="reference/cross_validate.html">cross_validate()</a></code> supports multiple model types (<strong>lm / gam / rf / dt</strong>)</td>
 </tr>
 <tr>
 <td>Error messages with no guidance</td>
