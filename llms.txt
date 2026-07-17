@@ -80,8 +80,9 @@ devtools::install_github("EasternTechFusion/atspR")
 > minutes) —
 > [`fill_time_gaps()`](https://easterntechfusion.github.io/atspR/reference/fill_time_gaps.md)
 > snaps them onto a regular 10-minute grid, inserting `NA` for any grid
-> point with no matching reading. This dataset has only one variable
-> (`WaterLevel`), so
+> point with no matching reading.
+
+> This dataset has only one variable (`WaterLevel`), so
 > [`ts_preprocess()`](https://easterntechfusion.github.io/atspR/reference/ts_preprocess.md)
 > runs in univariate mode — no exogenous features are used.
 

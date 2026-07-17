@@ -184,7 +184,10 @@
 </tbody>
 </table>
 <blockquote>
-<p>Raw sensor readings arrive at irregular intervals (roughly every 10 minutes) — <code><a href="reference/fill_time_gaps.html">fill_time_gaps()</a></code> snaps them onto a regular 10-minute grid, inserting <code>NA</code> for any grid point with no matching reading. This dataset has only one variable (<code>WaterLevel</code>), so <code><a href="reference/ts_preprocess.html">ts_preprocess()</a></code> runs in univariate mode — no exogenous features are used.</p>
+<p>Raw sensor readings arrive at irregular intervals (roughly every 10 minutes) — <code><a href="reference/fill_time_gaps.html">fill_time_gaps()</a></code> snaps them onto a regular 10-minute grid, inserting <code>NA</code> for any grid point with no matching reading.</p>
+</blockquote>
+<blockquote>
+<p>This dataset has only one variable (<code>WaterLevel</code>), so <code><a href="reference/ts_preprocess.html">ts_preprocess()</a></code> runs in univariate mode — no exogenous features are used.</p>
 </blockquote>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
