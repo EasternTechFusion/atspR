@@ -20,7 +20,7 @@ The package is designed for students and domain practitioners (agronomists, envi
 | Scalers applied before splitting → **data leakage** | Scaler fitted on **TRAIN only**, applied to both sets |
 | Random split invalidates time-series models | **Temporal split** — train always precedes test chronologically |
 | Silent NA removal with no record | Full report of what was dropped or imputed, and why |
-| Multi-package workflow, easy to sequence incorrectly | Single function `ts_preprocess()` runs all 7 steps in order |
+| Multi-package workflow, easy to sequence incorrectly | Single function `ts_preprocess()` runs all 8 steps in order |
 | Error messages with no guidance | Every automated decision explained in plain-language output |
 
 ---
@@ -44,7 +44,7 @@ Raw data
    │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
    │    (Stage 10) cross_validate()     Walk-forward k-fold CV — Linear Regression / 
    │                                    Generalized Additive Model / Random Forest / 
-   │                                    Decision Tree (optional For Use)
+   │                                    Decision Tree (Choose One)
    │
    └─ ts_export()                       Write all outputs to CSV
 ```
@@ -61,6 +61,46 @@ devtools::install_github("EasternTechFusion/atspR")
 
 ## Quick Start
 
+## univariate
+**Sample data**
+
+| DateTime         | WaterLevel |
+|------------------|------------|
+| 2024-01-01 08:00 | 3.31       |
+| 2024-01-01 08:10 | 3.37       |
+| 2024-01-01 08:20 | 3.46       |
+| 2024-01-01 08:33 | 3.53       |
+| 2024-01-01 08:42 | 3.56       |
+| 2024-01-01 08:59 | 3.58       |
+| 2024-01-01 09:10 | 3.60       |
+| 2024-01-01 09:24 | 3.62       |
+
+> Raw sensor readings arrive at irregular intervals (roughly every 10 minutes) — `fill_time_gaps()` 
+snaps them onto a regular 10-minute grid, inserting `NA` for any grid point with no matching reading.
+> This dataset has only one variable (`WaterLevel`), so `ts_preprocess()` runs in univariate mode — 
+no exogenous features are used.
+
+```r
+library(atspR)
+
+df$datetime <- as.POSIXct(df$datetime, 
+                          format = "%Y-%m-%d %H:%M:%S")
+
+gap <- fill_time_gaps(df,
+                      time_col = "DateTime",
+                      n        = 10,
+                      unit     = "min")
+
+result <- ts_preprocess(data          = gap$data,
+                        train_ratio   = 0.8,
+                        impute_method = "linear",
+                        lags          = 24,
+                        model_type    = "lm",
+                        target_col    = "WaterLevel",
+                        k_folds       = 5)
+```
+
+## multivariate
 ### Case 1: Date + Time in separate columns
 **Sample data**
 
