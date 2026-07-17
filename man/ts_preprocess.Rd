@@ -16,6 +16,10 @@ ts_preprocess(
   target_col = NULL,
   k_folds = 5L,
   model_fn = NULL,
+  model_type = c("lm", "gam", "rf", "dt"),
+  rf_ntree = 500L,
+  dt_cp = 0.01,
+  lags = 1L,
   verbose = TRUE
 )
 }
@@ -47,6 +51,25 @@ If \code{NULL} (default), CV is skipped.}
 
 \item{model_fn}{Optional custom model function for CV.}
 
+\item{model_type}{Character. Which built-in default CV model to use when
+\code{model_fn} is \code{NULL}: \code{"lm"} (default, plain linear regression), \code{"gam"}
+(smooth/non-linear fit -- recommended if the series is expected to be
+non-linear, e.g. water level or VPD), \code{"rf"} (Random Forest), or \code{"dt"}
+(Decision Tree). Passed straight through to \code{\link[=cross_validate]{cross_validate()}}.}
+
+\item{rf_ntree}{Integer. Number of trees when \code{model_type = "rf"}
+(default 500).}
+
+\item{dt_cp}{Numeric. Complexity parameter when \code{model_type = "dt"}
+(default 0.01).}
+
+\item{lags}{Integer vector (or \code{NULL}). Only used in CV's single-variable
+fallback case (\code{target_col} is the only predictor available). Adds
+lagged copies of the target as extra predictors -- e.g. \code{lags = 1}
+(default) adds \code{.lag1}, the previous row's value. Passed straight
+through to \code{\link[=cross_validate]{cross_validate()}}; see its docs for details. Set to \code{NULL}
+to disable and fall back to \code{.time_index} only.}
+
 \item{verbose}{Logical (default \code{TRUE}).}
 }
 \value{
@@ -63,6 +86,8 @@ An invisible list with elements:
 \item{\code{imputation_report}}{String describing the action taken.}
 \item{\code{cv_summary}}{CV summary data.frame, or NULL if skipped.}
 \item{\code{cv_folds}}{Per-fold CV results, or NULL if skipped.}
+\item{\code{cv_model_type}}{Which CV model was used (\code{"custom"} if \code{model_fn}
+was supplied), or NULL if CV was skipped.}
 \item{\code{plots}}{Named list: boxplot, scatter.}
 \item{\code{before_after}}{Before/after imputation sample, or NULL.}
 }

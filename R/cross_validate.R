@@ -20,7 +20,46 @@
 #' @param model_fn Function with signature `function(train_fold, val_fold)`.
 #'   Must return a named numeric vector / list that includes at least one
 #'   performance metric (e.g. `c(RMSE = ..., MAE = ..., R2 = ...)`).
-#'   A simple linear-regression default is provided when `NULL`.
+#'   When `NULL` (the default), a built-in model is used instead, chosen via
+#'   `model_type`. Supplying `model_fn` overrides `model_type` entirely.
+#' @param model_type Character. Which built-in default model to use when
+#'   `model_fn` is `NULL`. One of:
+#'   \describe{
+#'     \item{`"lm"`}{(default) Plain linear regression via `stats::lm()`:
+#'       numeric predictors enter additively (no smoothing), non-numeric
+#'       predictors are coerced to `factor()`. A simple, fast baseline.}
+#'     \item{`"gam"`}{`mgcv::gam()`. Every numeric predictor is fit
+#'       with a smooth term `s(x, k = ...)` (basis dimension auto-capped to
+#'       the number of unique values in the training fold) and every
+#'       non-numeric predictor is coerced to `factor()`. This captures
+#'       non-linear trend/seasonality (e.g. water level, VPD) far better than
+#'       a plain linear fit.}
+#'     \item{`"rf"`}{Random Forest via `randomForest::randomForest()`.
+#'       `ntree` is controlled by `rf_ntree` (default 500).}
+#'     \item{`"dt"`}{Decision Tree via `rpart::rpart()`. Tree complexity is
+#'       controlled by `dt_cp` (default 0.01).}
+#'   }
+#'   All four built-ins share the same predictor handling: date/POSIXct/
+#'   difftime columns are coerced to numeric, and a `.time_index` fallback
+#'   predictor is used if `target_col` is the only column present. Set
+#'   `model_type = "gam"` if the series is expected to be non-linear (e.g.
+#'   water level, VPD) -- the plain `"lm"` default may under-fit those cases.
+#' @param rf_ntree Integer. Number of trees for `model_type = "rf"`
+#'   (default 500). Ignored otherwise.
+#' @param dt_cp Numeric. Complexity parameter for `model_type = "dt"`
+#'   (default 0.01). Ignored otherwise.
+#' @param lags Integer vector (or `NULL`). Only used in the univariate
+#'   fallback case -- when `target_col` is the only column present, or every
+#'   other column is a date/time stamp (e.g. a `WaterLevel` column plus its
+#'   `DateTime`). Adds lagged copies of the target as extra predictors --
+#'   e.g. `lags = 1` adds `.lag1` (the previous row's value); `lags = c(1,
+#'   2, 3)` adds `.lag1`, `.lag2`, `.lag3`. Lags are computed across the
+#'   seed + prior-fold data and the current validation fold together (a
+#'   single continuous time series), so validation rows always get real
+#'   historical values, never ones leaking from later in time. Rows in the
+#'   training fold whose lag would reach before the start of the series are
+#'   dropped (only affects the earliest `max(lags)` rows of the very first
+#'   fold). Default `1L`; set to `NULL` to disable.
 #' @param k Integer.  Number of folds (default 5).
 #' @param min_train_size Numeric in (0, 1).  Fraction of rows reserved as seed
 #'   training data before folding begins.  Default `0.2` (20 %).
@@ -35,6 +74,8 @@
 #'   \item{`k_evaluated`}{Number of folds actually evaluated.}
 #'   \item{`min_train_size`}{Seed fraction used.}
 #'   \item{`target_col`}{Response column name.}
+#'   \item{`model_type`}{Which built-in model was used (`"custom"` if
+#'     `model_fn` was supplied).}
 #' }
 #'
 #' @examples
@@ -50,12 +91,26 @@ cross_validate <- function(scale_result   = NULL,
                            train          = NULL,
                            target_col,
                            model_fn       = NULL,
+                           model_type     = c("lm", "gam", "rf", "dt"),
+                           rf_ntree       = 500L,
+                           dt_cp          = 0.01,
+                           lags           = 1L,
                            k              = 5L,
                            min_train_size = 0.2,
                            verbose        = TRUE) {
 
   # -- Force k to integer ----------------------------------------------------
   k <- as.integer(k)
+
+  # -- Validate lags -----------------------------------------------------------
+  if (!is.null(lags)) {
+    lags <- as.integer(lags)
+    if (any(lags <= 0L) || anyNA(lags))
+      rlang::abort("`lags` must be a positive integer vector, or `NULL` to disable.")
+  }
+
+  # -- Resolve model_type ------------------------------------------------------
+  model_type <- match.arg(model_type)
 
   # -- Validate min_train_size -----------------------------------------------
   if (!is.numeric(min_train_size) || min_train_size <= 0 || min_train_size >= 1)
@@ -100,33 +155,208 @@ cross_validate <- function(scale_result   = NULL,
   # -- Track whether model is default ---------------------------------------
   is_default_model <- is.null(model_fn)
 
-  # -- Default model: OLS linear regression ---------------------------------
+  # -- Shared predictor prep (used by all built-in default models) -----------
+  # - Falls back to a row-order .time_index predictor (plus lag features, if
+  #   `lags` is set) if target_col is the only column present.
+  # - Date/POSIXct/difftime columns are NOT is.numeric() == TRUE in base R,
+  #   even though they're stored as numbers. Left unhandled, they'd get
+  #   coerced to factor() and blow up with "new levels" errors the moment a
+  #   validation fold contains a timestamp unseen in training (which is
+  #   guaranteed for walk-forward CV on a date/time column). Coerce them to
+  #   plain numeric here instead.
+  # - Character columns are coerced to factor() so rf/dt/gam all handle them
+  #   consistently; factor levels in val_fold are aligned to train_fold's
+  #   levels so unseen categories become NA rather than erroring downstream.
+  .prep_predictors <- function(train_fold, val_fold) {
+
+    predictors <- setdiff(names(train_fold), target_col)
+    time_like  <- c("Date", "POSIXct", "POSIXt", "difftime")
+
+    # A series is "effectively univariate" when nothing except a date/time
+    # stamp (or nothing at all) is available to predict from -- e.g. a
+    # WaterLevel column plus its DateTime timestamp. This is the case lag
+    # features are meant for; a plain timestamp carries no more information
+    # than a row index, so its presence shouldn't block lags.
+    non_time_predictors <- Filter(function(p) !inherits(train_fold[[p]], time_like), predictors)
+    is_univariate        <- length(non_time_predictors) == 0
+
+    if (length(predictors) == 0) {
+      train_fold$.time_index <- seq_len(nrow(train_fold))
+      val_fold$.time_index   <- nrow(train_fold) + seq_len(nrow(val_fold))
+      predictors <- ".time_index"
+    }
+
+    # -- Lag features (univariate case only) -----------------------------------
+    # train_fold and val_fold are two contiguous slices of the same time-
+    # ordered series (val_fold starts exactly where train_fold ends), so we
+    # can safely stitch the target column back together, compute lags on
+    # the combined vector, then split the lag columns back out. Because
+    # every lag looks strictly backwards, val_fold's lag values are always
+    # real past observations -- never information from later in time.
+    if (is_univariate && !is.null(lags) && length(lags) > 0) {
+      n_train     <- nrow(train_fold)
+      n_val       <- nrow(val_fold)
+      full_target <- c(train_fold[[target_col]], val_fold[[target_col]])
+
+      for (lag in lags) {
+        lag_name <- paste0(".lag", lag)
+        lag_vals <- c(rep(NA_real_, lag), utils::head(full_target, -lag))
+        train_fold[[lag_name]] <- lag_vals[seq_len(n_train)]
+        val_fold[[lag_name]]   <- lag_vals[n_train + seq_len(n_val)]
+        predictors <- c(predictors, lag_name)
+      }
+
+      # Drop training rows whose lag reaches before the start of the series
+      # (only the earliest max(lags) rows of the very first fold's seed
+      # data). val_fold is never dropped: its lags are always filled from
+      # train_fold's tail, which always exists.
+      lag_cols   <- paste0(".lag", lags)
+      keep_rows  <- stats::complete.cases(train_fold[, lag_cols, drop = FALSE])
+      train_fold <- train_fold[keep_rows, , drop = FALSE]
+    }
+
+    for (p in predictors) {
+      if (inherits(train_fold[[p]], time_like)) {
+        train_fold[[p]] <- as.numeric(train_fold[[p]])
+        val_fold[[p]]   <- as.numeric(val_fold[[p]])
+      } else if (is.character(train_fold[[p]]) || is.factor(train_fold[[p]])) {
+        train_fold[[p]] <- factor(train_fold[[p]])
+        val_fold[[p]]   <- factor(as.character(val_fold[[p]]), levels = levels(train_fold[[p]]))
+      }
+    }
+
+    list(train_fold = train_fold, val_fold = val_fold, predictors = predictors)
+  }
+
+  # -- Shared metric computation ---------------------------------------------
+  .fold_metrics <- function(preds, actuals) {
+    resid  <- actuals - preds
+    ss_res <- sum(resid^2, na.rm = TRUE)
+    ss_tot <- sum((actuals - mean(actuals, na.rm = TRUE))^2, na.rm = TRUE)
+    c(RMSE = sqrt(mean(resid^2, na.rm = TRUE)),
+      MAE  = mean(abs(resid),   na.rm = TRUE),
+      R2   = if (ss_tot == 0) NA_real_ else 1 - ss_res / ss_tot)
+  }
+
+  # -- Default models: lm / gam / rf / dt -------------------------------------
+  # "lm" (the default) fits the predictor set with plain stats::lm() -- a
+  # simple, fast linear baseline. For "gam", numeric predictors instead get a
+  # smooth s(x, k = ...) term and non-numeric predictors are coerced to
+  # factor(); this is more forgiving than lm() when the series is non-linear
+  # (e.g. water level) and/or only has one predictor (e.g. a time index),
+  # which can otherwise produce spuriously negative R2 on validation folds.
+  # "rf" and "dt" use the same predictor prep but fit
+  # randomForest::randomForest() / rpart::rpart() instead.
   if (is_default_model) {
-    model_fn <- function(train_fold, val_fold) {
-      fmla <- stats::as.formula(paste(target_col, "~ ."))
 
-      tryCatch({
-        fit     <- stats::lm(fmla, data = train_fold)
-        preds   <- stats::predict(fit, newdata = val_fold)
-        actuals <- val_fold[[target_col]]
-        resid   <- actuals - preds
-        ss_res  <- sum(resid^2, na.rm = TRUE)
-        ss_tot  <- sum((actuals - mean(actuals, na.rm = TRUE))^2, na.rm = TRUE)
+    if (model_type == "gam") {
 
-        c(RMSE = sqrt(mean(resid^2, na.rm = TRUE)),
-          MAE  = mean(abs(resid),   na.rm = TRUE),
-          R2   = if (ss_tot == 0) NA_real_ else 1 - ss_res / ss_tot)
-      }, error = function(e) {
-        warning("Fold failed: ", conditionMessage(e))
-        c(RMSE = NA_real_, MAE = NA_real_, R2 = NA_real_)
-      })
+      model_fn <- function(train_fold, val_fold) {
+        p    <- .prep_predictors(train_fold, val_fold)
+        train_fold <- p$train_fold; val_fold <- p$val_fold; predictors <- p$predictors
+
+        # Build one term per predictor: s(x, k = ...) for numeric, factor(x) otherwise.
+        # k is capped below both 10 and (unique values - 1) so gam() doesn't error
+        # on short/sparse folds, and floored at 3 (mgcv's minimum useful basis).
+        terms <- vapply(predictors, function(v) {
+          col <- train_fold[[v]]
+          if (is.numeric(col)) {
+            n_unique <- length(unique(col))
+            k_basis  <- max(3L, min(10L, n_unique - 1L))
+            sprintf("s(%s, k = %d)", v, k_basis)
+          } else {
+            sprintf("factor(%s)", v)
+          }
+        }, character(1))
+
+        fmla <- stats::as.formula(paste(target_col, "~", paste(terms, collapse = " + ")))
+
+        tryCatch({
+          fit   <- mgcv::gam(fmla, data = train_fold, method = "REML")
+          preds <- as.numeric(stats::predict(fit, newdata = val_fold))
+          .fold_metrics(preds, val_fold[[target_col]])
+        }, error = function(e) {
+          warning("Fold failed: ", conditionMessage(e))
+          c(RMSE = NA_real_, MAE = NA_real_, R2 = NA_real_)
+        })
+      }
+
+    } else if (model_type == "rf") {
+
+      if (!requireNamespace("randomForest", quietly = TRUE))
+        rlang::abort("Package 'randomForest' is required for `model_type = \"rf\"`. Install it with install.packages('randomForest').")
+
+      model_fn <- function(train_fold, val_fold) {
+        p    <- .prep_predictors(train_fold, val_fold)
+        train_fold <- p$train_fold; val_fold <- p$val_fold; predictors <- p$predictors
+
+        fmla <- stats::as.formula(paste(target_col, "~", paste(predictors, collapse = " + ")))
+
+        tryCatch({
+          fit   <- randomForest::randomForest(fmla, data = train_fold, ntree = rf_ntree)
+          preds <- as.numeric(stats::predict(fit, newdata = val_fold))
+          .fold_metrics(preds, val_fold[[target_col]])
+        }, error = function(e) {
+          warning("Fold failed: ", conditionMessage(e))
+          c(RMSE = NA_real_, MAE = NA_real_, R2 = NA_real_)
+        })
+      }
+
+    } else if (model_type == "dt") {
+
+      if (!requireNamespace("rpart", quietly = TRUE))
+        rlang::abort("Package 'rpart' is required for `model_type = \"dt\"`. Install it with install.packages('rpart').")
+
+      model_fn <- function(train_fold, val_fold) {
+        p    <- .prep_predictors(train_fold, val_fold)
+        train_fold <- p$train_fold; val_fold <- p$val_fold; predictors <- p$predictors
+
+        fmla <- stats::as.formula(paste(target_col, "~", paste(predictors, collapse = " + ")))
+
+        tryCatch({
+          fit   <- rpart::rpart(fmla, data = train_fold, method = "anova", control = rpart::rpart.control(cp = dt_cp))
+          preds <- as.numeric(stats::predict(fit, newdata = val_fold))
+          .fold_metrics(preds, val_fold[[target_col]])
+        }, error = function(e) {
+          warning("Fold failed: ", conditionMessage(e))
+          c(RMSE = NA_real_, MAE = NA_real_, R2 = NA_real_)
+        })
+      }
+
+    } else if (model_type == "lm") {
+
+      model_fn <- function(train_fold, val_fold) {
+        p    <- .prep_predictors(train_fold, val_fold)
+        train_fold <- p$train_fold; val_fold <- p$val_fold; predictors <- p$predictors
+
+        # Plain additive terms: numeric predictors used as-is, non-numeric
+        # wrapped in factor() -- same predictor handling as gam/rf/dt, just
+        # without a smooth or a tree, so this is the simplest possible
+        # baseline to compare the others against.
+        terms <- vapply(predictors, function(v) {
+          col <- train_fold[[v]]
+          if (is.numeric(col)) v else sprintf("factor(%s)", v)
+        }, character(1))
+
+        fmla <- stats::as.formula(paste(target_col, "~", paste(terms, collapse = " + ")))
+
+        tryCatch({
+          fit   <- stats::lm(fmla, data = train_fold)
+          preds <- as.numeric(stats::predict(fit, newdata = val_fold))
+          .fold_metrics(preds, val_fold[[target_col]])
+        }, error = function(e) {
+          warning("Fold failed: ", conditionMessage(e))
+          c(RMSE = NA_real_, MAE = NA_real_, R2 = NA_real_)
+        })
+      }
     }
   }
 
   if (verbose) {
     .header(paste0("STEP : Walk-Forward Cross-Validation  (k = ", k, ")"))
-    cat(sprintf("  Target : %s  |  Seed: %d rows (%.0f%%)  |  Folds: %d (~%d rows each)\n\n",
-                target_col, seed_n, min_train_size * 100, k, floor(n_fold / k)))
+    cat(sprintf("  Target : %s  |  Model: %s  |  Seed: %d rows (%.0f%%)  |  Folds: %d (~%d rows each)\n\n",
+                target_col, if (is_default_model) toupper(model_type) else "custom",
+                seed_n, min_train_size * 100, k, floor(n_fold / k)))
     .subheader("Results per fold")
     cat("  RMSE / MAE = error (lower is better)  |  R2 = fit (closer to 1.0 is better)\n\n")
     cat(sprintf("  %-6s  %-10s  %-8s  %-8s  %-8s  %-8s\n",
@@ -257,6 +487,7 @@ cross_validate <- function(scale_result   = NULL,
     k              = k,
     k_evaluated    = k_evaluated,
     min_train_size = min_train_size,
-    target_col     = target_col
+    target_col     = target_col,
+    model_type     = if (is_default_model) model_type else "custom"
   ))
 }

@@ -9,6 +9,10 @@ cross_validate(
   train = NULL,
   target_col,
   model_fn = NULL,
+  model_type = c("lm", "gam", "rf", "dt"),
+  rf_ntree = 500L,
+  dt_cp = 0.01,
+  lags = 1L,
   k = 5L,
   min_train_size = 0.2,
   verbose = TRUE
@@ -25,7 +29,49 @@ cross_validate(
 \item{model_fn}{Function with signature \verb{function(train_fold, val_fold)}.
 Must return a named numeric vector / list that includes at least one
 performance metric (e.g. \code{c(RMSE = ..., MAE = ..., R2 = ...)}).
-A simple linear-regression default is provided when \code{NULL}.}
+When \code{NULL} (the default), a built-in model is used instead, chosen via
+\code{model_type}. Supplying \code{model_fn} overrides \code{model_type} entirely.}
+
+\item{model_type}{Character. Which built-in default model to use when
+\code{model_fn} is \code{NULL}. One of:
+\describe{
+\item{\code{"lm"}}{(default) Plain linear regression via \code{stats::lm()}:
+numeric predictors enter additively (no smoothing), non-numeric
+predictors are coerced to \code{factor()}. A simple, fast baseline.}
+\item{\code{"gam"}}{\code{mgcv::gam()}. Every numeric predictor is fit
+with a smooth term \code{s(x, k = ...)} (basis dimension auto-capped to
+the number of unique values in the training fold) and every
+non-numeric predictor is coerced to \code{factor()}. This captures
+non-linear trend/seasonality (e.g. water level, VPD) far better than
+a plain linear fit.}
+\item{\code{"rf"}}{Random Forest via \code{randomForest::randomForest()}.
+\code{ntree} is controlled by \code{rf_ntree} (default 500).}
+\item{\code{"dt"}}{Decision Tree via \code{rpart::rpart()}. Tree complexity is
+controlled by \code{dt_cp} (default 0.01).}
+}
+All four built-ins share the same predictor handling: date/POSIXct/
+difftime columns are coerced to numeric, and a \code{.time_index} fallback
+predictor is used if \code{target_col} is the only column present. Set
+\code{model_type = "gam"} if the series is expected to be non-linear (e.g.
+water level, VPD) -- the plain \code{"lm"} default may under-fit those cases.}
+
+\item{rf_ntree}{Integer. Number of trees for \code{model_type = "rf"}
+(default 500). Ignored otherwise.}
+
+\item{dt_cp}{Numeric. Complexity parameter for \code{model_type = "dt"}
+(default 0.01). Ignored otherwise.}
+
+\item{lags}{Integer vector (or \code{NULL}). Only used in the univariate
+fallback case -- when \code{target_col} is the only column present, or every
+other column is a date/time stamp (e.g. a \code{WaterLevel} column plus its
+\code{DateTime}). Adds lagged copies of the target as extra predictors --
+e.g. \code{lags = 1} adds \code{.lag1} (the previous row's value); \code{lags = c(1, 2, 3)} adds \code{.lag1}, \code{.lag2}, \code{.lag3}. Lags are computed across the
+seed + prior-fold data and the current validation fold together (a
+single continuous time series), so validation rows always get real
+historical values, never ones leaking from later in time. Rows in the
+training fold whose lag would reach before the start of the series are
+dropped (only affects the earliest \code{max(lags)} rows of the very first
+fold). Default \code{1L}; set to \code{NULL} to disable.}
 
 \item{k}{Integer.  Number of folds (default 5).}
 
@@ -44,6 +90,8 @@ An invisible list with elements:
 \item{\code{k_evaluated}}{Number of folds actually evaluated.}
 \item{\code{min_train_size}}{Seed fraction used.}
 \item{\code{target_col}}{Response column name.}
+\item{\code{model_type}}{Which built-in model was used (\code{"custom"} if
+\code{model_fn} was supplied).}
 }
 }
 \description{

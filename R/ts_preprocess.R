@@ -35,6 +35,21 @@
 #'   If `NULL` (default), CV is skipped.
 #' @param k_folds Integer. Number of CV folds. Default `5`.
 #' @param model_fn Optional custom model function for CV.
+#' @param model_type Character. Which built-in default CV model to use when
+#'   `model_fn` is `NULL`: `"lm"` (default, plain linear regression), `"gam"`
+#'   (smooth/non-linear fit -- recommended if the series is expected to be
+#'   non-linear, e.g. water level or VPD), `"rf"` (Random Forest), or `"dt"`
+#'   (Decision Tree). Passed straight through to [cross_validate()].
+#' @param rf_ntree Integer. Number of trees when `model_type = "rf"`
+#'   (default 500).
+#' @param dt_cp Numeric. Complexity parameter when `model_type = "dt"`
+#'   (default 0.01).
+#' @param lags Integer vector (or `NULL`). Only used in CV's single-variable
+#'   fallback case (`target_col` is the only predictor available). Adds
+#'   lagged copies of the target as extra predictors -- e.g. `lags = 1`
+#'   (default) adds `.lag1`, the previous row's value. Passed straight
+#'   through to [cross_validate()]; see its docs for details. Set to `NULL`
+#'   to disable and fall back to `.time_index` only.
 #' @param verbose Logical (default `TRUE`).
 #'
 #' @return An invisible list with elements:
@@ -50,6 +65,8 @@
 #'   \item{`imputation_report`}{String describing the action taken.}
 #'   \item{`cv_summary`}{CV summary data.frame, or NULL if skipped.}
 #'   \item{`cv_folds`}{Per-fold CV results, or NULL if skipped.}
+#'   \item{`cv_model_type`}{Which CV model was used (`"custom"` if `model_fn`
+#'     was supplied), or NULL if CV was skipped.}
 #'   \item{`plots`}{Named list: boxplot, scatter.}
 #'   \item{`before_after`}{Before/after imputation sample, or NULL.}
 #' }
@@ -85,9 +102,15 @@ ts_preprocess <- function(data,
                           target_col    = NULL,
                           k_folds       = 5L,
                           model_fn      = NULL,
+                          model_type    = c("lm", "gam", "rf", "dt"),
+                          rf_ntree      = 500L,
+                          dt_cp         = 0.01,
+                          lags          = 1L,
                           verbose       = TRUE) {
 
   .check_df(data)
+
+  model_type <- match.arg(model_type)
 
   if (verbose) {
     .header("atspR  |  Automated Time Series Preprocessing")
@@ -95,8 +118,9 @@ ts_preprocess <- function(data,
                 nrow(data), ncol(data),
                 train_ratio * 100, (1 - train_ratio) * 100,
                 impute_method, scale_method))
-    cat(sprintf("  CV    : target = %s,  k = %d\n",
-                if (!is.null(target_col)) target_col else "none (skipped)", k_folds))
+    cat(sprintf("  CV    : target = %s,  k = %d,  model = %s\n",
+                if (!is.null(target_col)) target_col else "none (skipped)", k_folds,
+                if (is.null(model_fn)) toupper(model_type) else "custom"))
     cat(strrep("-", 60), "\n", sep = "")
   }
 
@@ -230,17 +254,23 @@ ts_preprocess <- function(data,
   }
 
   # Step 9: Cross-validate (optional)
-  cv_summary <- NULL
-  cv_folds   <- NULL
+  cv_summary    <- NULL
+  cv_folds      <- NULL
+  cv_model_type <- NULL
 
   if (!is.null(target_col)) {
-    cv         <- cross_validate(sc,
-                                 target_col = target_col,
-                                 model_fn   = model_fn,
-                                 k          = k_folds,
-                                 verbose    = verbose)
-    cv_summary <- cv$summary
-    cv_folds   <- cv$fold_results
+    cv            <- cross_validate(sc,
+                                    target_col = target_col,
+                                    model_fn   = model_fn,
+                                    model_type = model_type,
+                                    rf_ntree   = rf_ntree,
+                                    dt_cp      = dt_cp,
+                                    lags       = lags,
+                                    k          = k_folds,
+                                    verbose    = verbose)
+    cv_summary    <- cv$summary
+    cv_folds      <- cv$fold_results
+    cv_model_type <- cv$model_type
   }
 
   invisible(list(
@@ -255,6 +285,7 @@ ts_preprocess <- function(data,
     imputation_report = clean_train$report,
     cv_summary        = cv_summary,
     cv_folds          = cv_folds,
+    cv_model_type     = cv_model_type,
     plots = list(
       boxplot = ana$plot,
       scatter = viz$scatter_plots

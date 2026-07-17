@@ -9,6 +9,7 @@ fill_time_gaps(
   time_col,
   n = 1,
   unit = c("sec", "min", "hour", "day", "month", "quarter", "year"),
+  tolerance = NULL,
   verbose = TRUE
 )
 }
@@ -33,6 +34,17 @@ Note: \code{"month"} and \code{"quarter"} require the timestamp column to be \co
 and each value to fall on the first day of the month
 (e.g. \code{2024-01-01}, \code{2024-04-01}).}
 
+\item{tolerance}{Numeric seconds, or \code{NULL}. Only used when
+\verb{unit \\\%in\\\% c("sec","min","hour","day")}. Maximum distance an observed
+timestamp may sit from its nearest grid point and still be snapped to
+it. \code{NULL} (default) uses half the step size (\code{n}/\code{unit}), the widest
+tolerance that still avoids ambiguity between two adjacent grid
+points. Set to \code{0} to disable snapping and fall back to the legacy
+exact-match behavior (a timestamp must land exactly on the grid to
+count; otherwise it is left as-is and its grid slot is reported as a
+gap). Ignored (with a warning if non-\code{NULL}) for \code{"month"},
+\code{"quarter"}, and \code{"year"}.}
+
 \item{verbose}{Logical (default \code{TRUE}).}
 }
 \value{
@@ -47,11 +59,24 @@ Inserted rows have \code{NA} for all value columns.}
 \item{\code{gap_timestamps}}{Vector of timestamps that were inserted.}
 \item{\code{time_col}}{Name of the timestamp column.}
 \item{\code{freq}}{Frequency string describing the step used.}
+\item{\code{n_snapped}}{Number of observed timestamps snapped onto the grid
+(\code{0} for calendar units or when \code{tolerance = 0}).}
+\item{\code{n_dropped_duplicate}}{Rows dropped because a closer observation
+already claimed the same grid slot.}
+\item{\code{n_dropped_tolerance}}{Rows dropped because they were too far
+from any grid slot.}
 }
 }
 \description{
-Handles two types of missingness common in time-series:
+Handles three types of timestamp trouble common in time-series:
 \enumerate{
+\item \strong{Drifted timestamps} - a reading scheduled for 13:05 was
+logged at 13:06 instead. For \verb{unit \\\%in\\\% c("sec","min","hour","day")},
+each observed timestamp is snapped to the nearest point on the
+regular grid, provided it falls within \code{tolerance} of that point.
+(Not applicable to \code{"month"}/\code{"quarter"}/\code{"year"}, whose calendar
+steps have no fixed duration - those units always use exact
+matching, as before.)
 \item \strong{Missing rows} - timestamps that are absent entirely.
 These rows are inserted with \code{NA} for all value columns.
 \item \strong{Missing values} - rows that exist but have \code{NA} in some columns.
@@ -63,29 +88,21 @@ After filling gaps the result is ready to pass into
 tsibble and tibble inputs are automatically converted to \code{data.frame}.
 }
 \examples{
-# Hourly data with a missing row
+# Sensor drift: 13:06 should have been 13:05
 df <- data.frame(
-  datetime = as.POSIXct(c("2024-01-01 08:00:00",
-                           "2024-01-01 09:00:00",
-                           "2024-01-01 11:00:00")),
-  temp  = c(25.1, 25.4, 26.2),
-  humid = c(80, NA, 85)
+  datetime = as.POSIXct(c("2024-01-01 13:00:00",
+                           "2024-01-01 13:06:00",
+                           "2024-01-01 13:10:00")),
+  vpd = c(1.2, 1.4, 1.5)
 )
-result <- fill_time_gaps(df, time_col = "datetime", n = 1, unit = "hour")
+result <- fill_time_gaps(df, time_col = "datetime", n = 5, unit = "min")
 result$data
 
-# Monthly data - missing February
+# Monthly data - missing February (calendar unit: exact match only)
 df_m <- data.frame(
   date  = as.Date(c("2024-01-01", "2024-03-01", "2024-04-01")),
   sales = c(100, 130, 150)
 )
 result_m <- fill_time_gaps(df_m, time_col = "date", n = 1, unit = "month")
-
-# Quarterly data - missing Q2
-df_q <- data.frame(
-  date  = as.Date(c("2024-01-01", "2024-07-01", "2024-10-01")),
-  sales = c(300, 420, 390)
-)
-result_q <- fill_time_gaps(df_q, time_col = "date", n = 1, unit = "quarter")
 
 }
