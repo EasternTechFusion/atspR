@@ -120,9 +120,9 @@
    │    (Stage 7) handle_missing()      Drop rows or interpolate (linear/KNN)
    │    (Stage 8) visualize_data()      Scatter plots per variable vs time
    │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
-   │    (Stage 10) cross_validate()     Walk-forward k-fold CV — Linear Regression /
-   │                                    Generalized Additive Model / Random Forest /
-   │                                    Decision Tree (Choose One)
+   │    (Stage 10) cross_validate()     Walk-forward k-fold CV (Choose One) — Linear Regression (lm)/
+   │                                    Generalized Additive Model (gam)/ Random Forest (rf)/
+   │                                    Decision Tree (dt)
    │
    └─ ts_export()                       Write all outputs to CSV</code></pre>
 <hr>
