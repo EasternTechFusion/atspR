@@ -77,6 +77,7 @@ devtools::install_github("EasternTechFusion/atspR")
 
 > Raw sensor readings arrive at irregular intervals (roughly every 10 minutes) — `fill_time_gaps()` 
 snaps them onto a regular 10-minute grid, inserting `NA` for any grid point with no matching reading.
+
 > This dataset has only one variable (`WaterLevel`), so `ts_preprocess()` runs in univariate mode — 
 no exogenous features are used.
 
