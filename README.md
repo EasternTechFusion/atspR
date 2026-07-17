@@ -173,7 +173,7 @@ Fold 3: train = seed + fold1+2    → val = fold3
 
 ```
 Sueppong Mueanchamnong and Pattharaporn Thongnim (2026). atspR: Automated Time-Series Preprocessing in R.
-R package version 1.0.0
+R package version 1.1.0
 https://github.com/EasternTechFusion/atspR
 ```
 
