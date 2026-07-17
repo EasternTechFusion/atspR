@@ -68,43 +68,77 @@ EasternTechFusion/atspR</h4>
 
     
     
-<div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
-</h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"EasternTechFusion/atspR"</span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span></code></pre></div>
 <hr>
-</div>
 <div class="section level2">
 <h2 id="pipeline">Pipeline<a class="anchor" aria-label="anchor" href="#pipeline"></a>
 </h2>
 <pre><code>Raw data
    │
-   ├─ (Stage 1)  combine_datetime()   [optional] Merge date + time → POSIXct
-   ├─ (Stage 2)  fill_time_gaps()     Insert placeholder rows for missing timestamps
+   ├─ (Stage 1) combine_datetime()      Merge date + time columns → POSIXct (optional)
+   ├─ (Stage 2) fill_time_gaps()        Insert placeholder rows for missing timestamps
    │
-   └─ ts_preprocess() ─────────────────────────────────────────────────────────
-        (Stage 3)  standardize_na()   Convert sentinel values to NA
-        (Stage 4)  coerce_numeric()   Parse character columns to numeric
-        (Stage 5)  split_data()       Temporal train/test split
-        (Stage 6)  missing_analysis() Summarise NAs; decide DROP or IMPUTE
-        (Stage 7)  handle_missing()   Drop rows or interpolate (linear/KNN)
-        (Stage 8)  visualize_data()   Scatter plots per variable vs time
-        (Stage 9)  scale_data()       MinMax / Z-score / Robust (auto)
-        (Stage 10) cross_validate()   [optional] Walk-forward k-fold CV
+   └─ ts_preprocess()                   ────────────────── 8 steps ──────────────────────────────
+   │    (Stage 3) standardize_na()      Convert sentinel values to NA
+   │    (Stage 4) coerce_numeric()      Parse character columns to numeric
+   │    (Stage 5) split_data()          Temporal train/test split
+   │    (Stage 6) missing_analysis()    Summarise NAs; decide DROP or IMPUTE
+   │    (Stage 7) handle_missing()      Drop rows or interpolate (linear/KNN)
+   │    (Stage 8) visualize_data()      Scatter plots per variable vs time
+   │    (Stage 9) scale_data()          MinMax / Z-score / Robust (auto)
+   │    (Stage 10) cross_validate()     Walk-forward k-fold CV (optional) — choose one : 
+   |                                    Linear Regression (lm)/ Generalized Additive Model (gam)/
+   │                                    Random Forest (rf)/ Decision Tree (dt)
    │
-   └─ ts_export()  Write all outputs to CSV</code></pre>
+   └─ ts_export()                       Write all outputs to CSV</code></pre>
 <hr>
+</div>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"EasternTechFusion/atspR"</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
+<blockquote>
+<p><strong>Note:</strong> Column names must not contain parentheses
+<code>(</code> <code>)</code> or the package will fail to parse them.
+For example, rename <code>WaterLevel()</code> to <code>WaterLevel</code>
+before passing the data to <code>atspR</code> functions.</p>
+</blockquote>
+</div>
+<div class="section level2">
+<h2 id="univariate">Univariate<a class="anchor" aria-label="anchor" href="#univariate"></a>
+</h2>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span>, </span>
+<span>                          format <span class="op">=</span> <span class="st">"%Y-%m-%d %H:%M:%S"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">gap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fill_time_gaps.html">fill_time_gaps</a></span><span class="op">(</span><span class="va">df</span>,</span>
+<span>                      time_col <span class="op">=</span> <span class="st">"DateTime"</span>,</span>
+<span>                      n        <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>                      unit     <span class="op">=</span> <span class="st">"min"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ts_preprocess.html">ts_preprocess</a></span><span class="op">(</span>data          <span class="op">=</span> <span class="va">gap</span><span class="op">$</span><span class="va">data</span>,</span>
+<span>                        train_ratio   <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>                        impute_method <span class="op">=</span> <span class="st">"linear"</span>,</span>
+<span>                        lags          <span class="op">=</span> <span class="fl">24</span>,</span>
+<span>                        model_type    <span class="op">=</span> <span class="st">"lm"</span>,</span>
+<span>                        target_col    <span class="op">=</span> <span class="st">"WaterLevel"</span>,</span>
+<span>                        k_folds       <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="multivariate">Multivariate<a class="anchor" aria-label="anchor" href="#multivariate"></a>
+</h2>
 <div class="section level3">
 <h3 id="case-1-date-time-in-separate-columns">Case 1: Date + Time in separate columns<a class="anchor" aria-label="anchor" href="#case-1-date-time-in-separate-columns"></a>
 </h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/combine_datetime.html">combine_datetime</a></span><span class="op">(</span><span class="va">my_data</span>,</span>
@@ -126,7 +160,7 @@ EasternTechFusion/atspR</h4>
 <div class="section level3">
 <h3 id="case-2-datetime-in-one-column">Case 2: Datetime in one column<a class="anchor" aria-label="anchor" href="#case-2-datetime-in-one-column"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">datetime</span>, format <span class="op">=</span> <span class="st">"%Y-%m-%d %H:%M:%S"</span><span class="op">)</span></span>
@@ -144,7 +178,7 @@ EasternTechFusion/atspR</h4>
 <div class="section level3">
 <h3 id="case-3-date-only-daily-data">Case 3: Date only (daily data)<a class="anchor" aria-label="anchor" href="#case-3-date-only-daily-data"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/example/Automated-Time-Series-Preprocessing-in-R" class="external-link">atspR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">gap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fill_time_gaps.html">fill_time_gaps</a></span><span class="op">(</span><span class="va">df</span>,</span>
@@ -225,7 +259,7 @@ or <code>"auto"</code>
 <div class="section level2">
 <h2 id="export-results">Export Results<a class="anchor" aria-label="anchor" href="#export-results"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ts_export.html">ts_export</a></span><span class="op">(</span><span class="va">result</span>, dir <span class="op">=</span> <span class="st">"C:/Users/user/"</span>, prefix <span class="op">=</span> <span class="st">"data"</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
@@ -250,7 +284,7 @@ Fold 5: train = seed + fold1–4    → val = fold5</code></pre>
 </h2>
 <pre><code>Sueppong Mueanchamnong and Pattharaporn Thongnim (2026).
 atspR: Automated Time-Series Preprocessing in R.
-R package version 1.0.0.
+R package version 1.1.0.
 https://github.com/EasternTechFusion/atspR</code></pre>
 <p><em>MIT © 2024 · <a href="https://github.com/EasternTechFusion/atspR" class="external-link">GitHub
 Repository</a></em></p>
