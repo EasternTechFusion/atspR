@@ -1,6 +1,6 @@
 Package: atspR
 Title: Automated Time-Series Preprocessing in R
-Version: 1.0.0
+Version: 1.1.0
 Authors@R:
     person("Data", "Scientist", email = "ds@example.com", role = c("aut", "cre"))
 Description: An automated preprocessing pipeline for time-series and tabular data.
