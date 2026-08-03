@@ -83,6 +83,7 @@ These rows are inserted with <code>NA</code> for all value columns.</p></li>
 <span>  n <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  unit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sec"</span>, <span class="st">"min"</span>, <span class="st">"hour"</span>, <span class="st">"day"</span>, <span class="st">"month"</span>, <span class="st">"quarter"</span>, <span class="st">"year"</span><span class="op">)</span>,</span>
 <span>  tolerance <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  format <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -127,6 +128,17 @@ exact-match behavior (a timestamp must land exactly on the grid to
 count; otherwise it is left as-is and its grid slot is reported as a
 gap). Ignored (with a warning if non-<code>NULL</code>) for <code>"month"</code>,
 <code>"quarter"</code>, and <code>"year"</code>.</p></dd>
+
+
+<dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>
+<dd><p>Optional. Used only when <code>time_col</code> is <code>character</code>
+(e.g. read via base <code><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv()</a></code>, which never auto-detects dates).
+A <code><a href="https://rdrr.io/r/base/strptime.html" class="external-link">strptime()</a></code>-style format string (or vector of candidates to try
+in order), e.g. <code>"\%m/\%d/\%Y"</code>. When <code>NULL</code> (default), a set of
+common formats is tried automatically and the first one that parses
+every non-missing value without introducing new <code>NA</code>s is used. If
+none match, <code>fill_time_gaps()</code> aborts with guidance on how to
+convert the column yourself.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>

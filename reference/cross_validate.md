@@ -18,6 +18,7 @@ cross_validate(
   lags = 1L,
   k = 5L,
   min_train_size = 0.2,
+  cor_threshold = 0.95,
   verbose = TRUE
 )
 ```
@@ -123,6 +124,17 @@ cross_validate(
   before folding begins. Default `0.2` (20 %). This ensures fold 1
   always has training data available.
 
+- cor_threshold:
+
+  Numeric in (0, 1\] (default `0.95`). Before fitting any built-in
+  model, predictors that duplicate information already in the set are
+  dropped (per fold, keeping the earlier-listed column of each redundant
+  pair): (1) any two columns whose values are a 1-to-1 relabeling of
+  each other (e.g. `StationID` alongside `Station`) are always treated
+  as redundant, regardless of type; (2) two numeric columns whose
+  absolute Pearson correlation is at or above `cor_threshold` are also
+  treated as redundant.
+
 - verbose:
 
   Logical (default `TRUE`).
@@ -187,7 +199,7 @@ cv    <- cross_validate(sc, target_col = "Ozone", k = 5)
 #> 
 #>   Fold    n_train     n_val     RMSE      MAE       R2      
 #>   --------------------------------------------------------
-#>   1       17          15        2.6864    1.7218    -0.4654 
+#>   1       17          15        2.1410    1.3313    0.0692  
 #>   2       32          14        1.7235    1.2914    -0.1023 
 #>   3       46          14        0.6952    0.5571    0.3811  
 #>   4       60          14        0.5380    0.4337    0.5408  
@@ -200,13 +212,13 @@ cv    <- cross_validate(sc, target_col = "Ozone", k = 5)
 #> 
 #>   metric    mean      sd        min       max     
 #>   ----------------------------------------------
-#>   RMSE      1.2645    0.9256    0.5380    2.6864  
-#>   MAE       0.8720    0.6032    0.3561    1.7218  
-#>   R2        0.1495    0.4207    -0.4654   0.5408  
+#>   RMSE      1.1554    0.7270    0.5380    2.1410  
+#>   MAE       0.7939    0.4780    0.3561    1.3313  
+#>   R2        0.2565    0.2641    -0.1023   0.5408  
 #> 
 cv$summary
 #>   metric   mean     sd     min    max
-#> 1   RMSE 1.2645 0.9256  0.5380 2.6864
-#> 2    MAE 0.8720 0.6032  0.3561 1.7218
-#> 3     R2 0.1495 0.4207 -0.4654 0.5408
+#> 1   RMSE 1.1554 0.7270  0.5380 2.1410
+#> 2    MAE 0.7939 0.4780  0.3561 1.3313
+#> 3     R2 0.2565 0.2641 -0.1023 0.5408
 ```

@@ -29,6 +29,7 @@ fill_time_gaps(
   n = 1,
   unit = c("sec", "min", "hour", "day", "month", "quarter", "year"),
   tolerance = NULL,
+  format = NULL,
   verbose = TRUE
 )
 ```
@@ -77,6 +78,19 @@ fill_time_gaps(
   to count; otherwise it is left as-is and its grid slot is reported as
   a gap). Ignored (with a warning if non-`NULL`) for `"month"`,
   `"quarter"`, and `"year"`.
+
+- format:
+
+  Optional. Used only when `time_col` is `character` (e.g. read via base
+  [`read.csv()`](https://rdrr.io/r/utils/read.table.html), which never
+  auto-detects dates). A
+  [`strptime()`](https://rdrr.io/r/base/strptime.html)-style format
+  string (or vector of candidates to try in order), e.g.
+  `"\%m/\%d/\%Y"`. When `NULL` (default), a set of common formats is
+  tried automatically and the first one that parses every non-missing
+  value without introducing new `NA`s is used. If none match,
+  `fill_time_gaps()` aborts with guidance on how to convert the column
+  yourself.
 
 - verbose:
 

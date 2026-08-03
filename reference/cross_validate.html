@@ -59,6 +59,7 @@ only by past data, so no future information leaks into training.</p>
 <span>  lags <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  min_train_size <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span>  cor_threshold <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -153,6 +154,17 @@ training data before folding begins.  Default <code>0.2</code> (20 %).
 This ensures fold 1 always has training data available.</p></dd>
 
 
+<dt id="arg-cor-threshold">cor_threshold<a class="anchor" aria-label="anchor" href="#arg-cor-threshold"></a></dt>
+<dd><p>Numeric in (0, 1] (default <code>0.95</code>). Before fitting any
+built-in model, predictors that duplicate information already in the set
+are dropped (per fold, keeping the earlier-listed column of each
+redundant pair): (1) any two columns whose values are a 1-to-1 relabeling
+of each other (e.g. <code>StationID</code> alongside <code>Station</code>) are always treated
+as redundant, regardless of type; (2) two numeric columns whose absolute
+Pearson correlation is at or above <code>cor_threshold</code> are also treated as
+redundant.</p></dd>
+
+
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Logical (default <code>TRUE</code>).</p></dd>
 
@@ -211,7 +223,7 @@ enough data to train on.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Fold    n_train     n_val     RMSE      MAE       R2      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   --------------------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1       17          15        2.6864    1.7218    -0.4654 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1       17          15        2.1410    1.3313    0.0692  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   2       32          14        1.7235    1.2914    -0.1023 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   3       46          14        0.6952    0.5571    0.3811  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   4       60          14        0.5380    0.4337    0.5408  </span>
@@ -224,15 +236,15 @@ enough data to train on.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   metric    mean      sd        min       max     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   ----------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   RMSE      1.2645    0.9256    0.5380    2.6864  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   MAE       0.8720    0.6032    0.3561    1.7218  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   R2        0.1495    0.4207    -0.4654   0.5408  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   RMSE      1.1554    0.7270    0.5380    2.1410  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   MAE       0.7939    0.4780    0.3561    1.3313  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   R2        0.2565    0.2641    -0.1023   0.5408  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="va">cv</span><span class="op">$</span><span class="va">summary</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   metric   mean     sd     min    max</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1   RMSE 1.2645 0.9256  0.5380 2.6864</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2    MAE 0.8720 0.6032  0.3561 1.7218</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     R2 0.1495 0.4207 -0.4654 0.5408</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   RMSE 1.1554 0.7270  0.5380 2.1410</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2    MAE 0.7939 0.4780  0.3561 1.3313</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     R2 0.2565 0.2641 -0.1023 0.5408</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
