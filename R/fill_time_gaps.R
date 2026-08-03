@@ -49,6 +49,14 @@
 #'   count; otherwise it is left as-is and its grid slot is reported as a
 #'   gap). Ignored (with a warning if non-`NULL`) for `"month"`,
 #'   `"quarter"`, and `"year"`.
+#' @param format Optional. Used only when `time_col` is `character`
+#'   (e.g. read via base `read.csv()`, which never auto-detects dates).
+#'   A `strptime()`-style format string (or vector of candidates to try
+#'   in order), e.g. `"\%m/\%d/\%Y"`. When `NULL` (default), a set of
+#'   common formats is tried automatically and the first one that parses
+#'   every non-missing value without introducing new `NA`s is used. If
+#'   none match, `fill_time_gaps()` aborts with guidance on how to
+#'   convert the column yourself.
 #' @param verbose Logical (default `TRUE`).
 #'
 #' @return An invisible list with elements:
@@ -95,6 +103,7 @@ fill_time_gaps <- function(data,
                            unit = c("sec", "min", "hour", "day",
                                     "month", "quarter", "year"),
                            tolerance = NULL,
+                           format    = NULL,
                            verbose = TRUE) {
 
   # -- Auto-convert tsibble / tibble -> data.frame ---------------------------
@@ -117,6 +126,33 @@ fill_time_gaps <- function(data,
     rlang::abort("`n` must be a positive number.")
 
   ts <- data[[time_col]]
+
+  # -- Auto-convert character timestamps -------------------------------------
+  # Common when reading CSV with base R read.csv(), which never guesses
+  # date/time classes. Tries `format` (if supplied) or a set of common
+  # formats; only accepts a parse if it doesn't introduce new NAs.
+  if (is.character(ts)) {
+    parsed <- .auto_parse_timestamp(ts, unit = unit, format = format)
+
+    if (is.null(parsed)) {
+      rlang::abort(sprintf(paste0(
+        "Column '%s' is character and could not be parsed automatically.\n",
+        "  Tell fill_time_gaps() the format explicitly, e.g.:\n",
+        "  fill_time_gaps(data, time_col = \"%s\", ..., format = \"%%m/%%d/%%Y\")\n",
+        "  Or convert beforehand:\n",
+        "  data$%s <- as.Date(data$%s, format = \"%%m/%%d/%%Y\")"
+      ), time_col, time_col, time_col, time_col))
+    }
+
+    if (verbose)
+      message(sprintf(
+        "[INFO] Column '%s' was character -> auto-converted to %s using format \"%s\".",
+        time_col, class(parsed)[1], attr(parsed, "format_used")
+      ))
+
+    data[[time_col]] <- parsed
+    ts <- parsed
+  }
 
   # -- Validate timestamp class ----------------------------------------------
   if (!inherits(ts, c("Date", "POSIXct", "POSIXlt"))) {
@@ -355,6 +391,60 @@ fill_time_gaps <- function(data,
     n_dropped_duplicate = n_dropped_duplicate,
     n_dropped_tolerance = n_dropped_tolerance
   ))
+}
+
+#' Try to parse a character vector into Date or POSIXct
+#'
+#' Tries `format` (if supplied) first, otherwise walks through a list of
+#' common date/datetime formats. A candidate format is only accepted if it
+#' does not introduce *new* NAs beyond whatever was already NA in `x` -
+#' this avoids silently mis-parsing ambiguous formats (e.g. reading
+#' "13/01/2024" as month-first would fail this check and get rejected).
+#'
+#' @param x Character vector.
+#' @param unit The `unit` argument from `fill_time_gaps()`. `"month"`/
+#'   `"quarter"` need a `Date` result, so only date-only formats are tried.
+#' @param format Optional. A single format string (as used by
+#'   `strptime()`), or a character vector of candidates to try in order.
+#'   Skips the built-in guess list when supplied.
+#' @return A `Date` or `POSIXct` vector with a `"format_used"` attribute,
+#'   or `NULL` if nothing worked.
+#' @keywords internal
+#' @noRd
+.auto_parse_timestamp <- function(x, unit, format = NULL) {
+
+  date_only <- unit %in% c("month", "quarter")
+  n_na_orig <- sum(is.na(x) | trimws(x) == "")
+
+  candidates <- if (!is.null(format)) {
+    format
+  } else if (date_only) {
+    c("%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d")
+  } else {
+    c("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M",
+      "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M",
+      "%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d")
+  }
+
+  for (fmt in candidates) {
+    is_datetime_fmt <- grepl("%H", fmt, fixed = TRUE)
+
+    if (is_datetime_fmt && date_only) next  # month/quarter need Date, skip datetime formats
+
+    parsed <- if (is_datetime_fmt) {
+      suppressWarnings(as.POSIXct(x, format = fmt, tz = "UTC"))
+    } else {
+      suppressWarnings(as.Date(x, format = fmt))
+    }
+
+    # Accept only if this format didn't produce any *new* NAs
+    if (sum(is.na(parsed)) == n_na_orig) {
+      attr(parsed, "format_used") <- fmt
+      return(parsed)
+    }
+  }
+
+  NULL
 }
 
 #' Build NA-filled rows for a set of timestamps, preserving column types

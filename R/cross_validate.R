@@ -64,6 +64,14 @@
 #' @param min_train_size Numeric in (0, 1).  Fraction of rows reserved as seed
 #'   training data before folding begins.  Default `0.2` (20 %).
 #'   This ensures fold 1 always has training data available.
+#' @param cor_threshold Numeric in (0, 1] (default `0.95`). Before fitting any
+#'   built-in model, predictors that duplicate information already in the set
+#'   are dropped (per fold, keeping the earlier-listed column of each
+#'   redundant pair): (1) any two columns whose values are a 1-to-1 relabeling
+#'   of each other (e.g. `StationID` alongside `Station`) are always treated
+#'   as redundant, regardless of type; (2) two numeric columns whose absolute
+#'   Pearson correlation is at or above `cor_threshold` are also treated as
+#'   redundant.
 #' @param verbose Logical (default `TRUE`).
 #'
 #' @return An invisible list with elements:
@@ -97,6 +105,7 @@ cross_validate <- function(scale_result   = NULL,
                            lags           = 1L,
                            k              = 5L,
                            min_train_size = 0.2,
+                           cor_threshold  = 0.95,
                            verbose        = TRUE) {
 
   # -- Force k to integer ----------------------------------------------------
@@ -115,6 +124,10 @@ cross_validate <- function(scale_result   = NULL,
   # -- Validate min_train_size -----------------------------------------------
   if (!is.numeric(min_train_size) || min_train_size <= 0 || min_train_size >= 1)
     rlang::abort("`min_train_size` must be a number strictly between 0 and 1.")
+
+  # -- Validate cor_threshold --------------------------------------------------
+  if (!is.numeric(cor_threshold) || cor_threshold <= 0 || cor_threshold > 1)
+    rlang::abort("`cor_threshold` must be a number strictly between 0 and 1.")
 
   # -- Resolve training data -------------------------------------------------
   if (!is.null(scale_result)) {
@@ -219,10 +232,71 @@ cross_validate <- function(scale_result   = NULL,
       if (inherits(train_fold[[p]], time_like)) {
         train_fold[[p]] <- as.numeric(train_fold[[p]])
         val_fold[[p]]   <- as.numeric(val_fold[[p]])
-      } else if (is.character(train_fold[[p]]) || is.factor(train_fold[[p]])) {
+      } else if (is.character(train_fold[[p]]) || is.factor(train_fold[[p]]) || is.logical(train_fold[[p]])) {
         train_fold[[p]] <- factor(train_fold[[p]])
         val_fold[[p]]   <- factor(as.character(val_fold[[p]]), levels = levels(train_fold[[p]]))
       }
+    }
+
+    # -- Drop qualitative predictors that are constant in this fold ------------
+    # lm()/gam() error out ("contrasts can be applied only to factors with 2
+    # or more levels") whenever a factor column happens to take only one
+    # value across train_fold -- common in walk-forward CV when e.g. a
+    # Station/Region column is still constant in the early, smaller training
+    # windows. Such a predictor carries no information in this fold anyway
+    # (zero variance), so it's dropped from `predictors` here instead of
+    # letting the whole fold fail.
+    predictors <- Filter(function(p) {
+      col <- train_fold[[p]]
+      !is.factor(col) || nlevels(droplevels(col)) >= 2
+    }, predictors)
+
+    # -- Drop redundant / multicollinear predictors -----------------------------
+    # Two columns are treated as redundant, and the later-listed one dropped,
+    # keeping the earlier of each pair:
+    #  (1) 1-to-1 relabeling -- one column's values are fully determined by
+    #      the other's (e.g. `StationID` is just `Station` under a different
+    #      label). Checked regardless of type by comparing how many unique
+    #      (a, b) pairs occur against how many unique values each column has
+    #      alone: if every distinct value of a lines up with exactly one
+    #      value of b (and vice versa), they carry the same information.
+    #  (2) numeric-numeric correlation -- if both columns are numeric and
+    #      |cor()| >= cor_threshold, they're treated as redundant too.
+    # Recomputed per fold (rather than once up front) since train_fold grows
+    # across folds and a pair's correlation can shift slightly.
+    if (length(predictors) >= 2) {
+      dropped <- character(0)
+      for (i in seq_along(predictors)) {
+        a <- predictors[i]
+        if (a %in% dropped) next
+        col_a <- train_fold[[a]]
+
+        for (j in seq_along(predictors)) {
+          if (j <= i) next
+          b <- predictors[j]
+          if (b %in% dropped) next
+          col_b <- train_fold[[b]]
+
+          redundant <- FALSE
+
+          if (is.numeric(col_a) && is.numeric(col_b) &&
+              stats::sd(col_a, na.rm = TRUE) > 0 && stats::sd(col_b, na.rm = TRUE) > 0) {
+            r <- suppressWarnings(stats::cor(col_a, col_b, use = "complete.obs"))
+            redundant <- !is.na(r) && abs(r) >= cor_threshold
+          }
+
+          if (!redundant) {
+            pair_key <- paste(as.character(col_a), as.character(col_b), sep = "\u0001")
+            n_a      <- length(unique(col_a))
+            n_b      <- length(unique(col_b))
+            n_pairs  <- length(unique(pair_key))
+            redundant <- n_a > 1 && n_b > 1 && n_pairs == n_a && n_pairs == n_b
+          }
+
+          if (redundant) dropped <- c(dropped, b)
+        }
+      }
+      predictors <- setdiff(predictors, dropped)
     }
 
     list(train_fold = train_fold, val_fold = val_fold, predictors = predictors)
@@ -237,6 +311,16 @@ cross_validate <- function(scale_result   = NULL,
       MAE  = mean(abs(resid),   na.rm = TRUE),
       R2   = if (ss_tot == 0) NA_real_ else 1 - ss_res / ss_tot)
   }
+
+  # -- Quantitative vs. qualitative predictor test ----------------------------
+  # After .prep_predictors(), every predictor is either plain numeric
+  # (quantitative) or factor/character/logical (qualitative). Checked
+  # explicitly here -- rather than just "!is.numeric()" -- so a stray type
+  # (e.g. complex, Date that slipped through) isn't silently treated as
+  # qualitative. Used by both "lm" and "gam" to decide whether a predictor
+  # gets a linear/smooth term (quantitative) or is wrapped in factor()
+  # (qualitative, one coefficient per level).
+  .is_qualitative <- function(x) is.factor(x) || is.character(x) || is.logical(x)
 
   # -- Default models: lm / gam / rf / dt -------------------------------------
   # "lm" (the default) fits the predictor set with plain stats::lm() -- a
@@ -258,14 +342,23 @@ cross_validate <- function(scale_result   = NULL,
         # Build one term per predictor: s(x, k = ...) for numeric, factor(x) otherwise.
         # k is capped below both 10 and (unique values - 1) so gam() doesn't error
         # on short/sparse folds, and floored at 3 (mgcv's minimum useful basis).
+        # If a numeric predictor has fewer than 4 unique values, there isn't
+        # enough distinct data for even a k=3 basis (mgcv errors with "A term
+        # has fewer unique covariate combinations than specified maximum
+        # degrees of freedom") -- fall back to a plain linear term for it
+        # instead of a smooth.
         terms <- vapply(predictors, function(v) {
           col <- train_fold[[v]]
-          if (is.numeric(col)) {
-            n_unique <- length(unique(col))
-            k_basis  <- max(3L, min(10L, n_unique - 1L))
-            sprintf("s(%s, k = %d)", v, k_basis)
-          } else {
+          if (.is_qualitative(col)) {
             sprintf("factor(%s)", v)
+          } else {
+            n_unique <- length(unique(col))
+            if (n_unique < 4L) {
+              v
+            } else {
+              k_basis <- max(3L, min(10L, n_unique - 1L))
+              sprintf("s(%s, k = %d)", v, k_basis)
+            }
           }
         }, character(1))
 
@@ -276,6 +369,8 @@ cross_validate <- function(scale_result   = NULL,
           preds <- as.numeric(stats::predict(fit, newdata = val_fold))
           .fold_metrics(preds, val_fold[[target_col]])
         }, error = function(e) {
+          if (verbose)
+            cat(sprintf("  [Fold failed] %s | formula: %s\n", conditionMessage(e), paste(deparse(fmla), collapse = " ")))
           warning("Fold failed: ", conditionMessage(e))
           c(RMSE = NA_real_, MAE = NA_real_, R2 = NA_real_)
         })
@@ -297,6 +392,8 @@ cross_validate <- function(scale_result   = NULL,
           preds <- as.numeric(stats::predict(fit, newdata = val_fold))
           .fold_metrics(preds, val_fold[[target_col]])
         }, error = function(e) {
+          if (verbose)
+            cat(sprintf("  [Fold failed] %s | formula: %s\n", conditionMessage(e), paste(deparse(fmla), collapse = " ")))
           warning("Fold failed: ", conditionMessage(e))
           c(RMSE = NA_real_, MAE = NA_real_, R2 = NA_real_)
         })
@@ -318,6 +415,8 @@ cross_validate <- function(scale_result   = NULL,
           preds <- as.numeric(stats::predict(fit, newdata = val_fold))
           .fold_metrics(preds, val_fold[[target_col]])
         }, error = function(e) {
+          if (verbose)
+            cat(sprintf("  [Fold failed] %s | formula: %s\n", conditionMessage(e), paste(deparse(fmla), collapse = " ")))
           warning("Fold failed: ", conditionMessage(e))
           c(RMSE = NA_real_, MAE = NA_real_, R2 = NA_real_)
         })
@@ -335,7 +434,7 @@ cross_validate <- function(scale_result   = NULL,
         # baseline to compare the others against.
         terms <- vapply(predictors, function(v) {
           col <- train_fold[[v]]
-          if (is.numeric(col)) v else sprintf("factor(%s)", v)
+          if (.is_qualitative(col)) sprintf("factor(%s)", v) else v
         }, character(1))
 
         fmla <- stats::as.formula(paste(target_col, "~", paste(terms, collapse = " + ")))
@@ -345,6 +444,8 @@ cross_validate <- function(scale_result   = NULL,
           preds <- as.numeric(stats::predict(fit, newdata = val_fold))
           .fold_metrics(preds, val_fold[[target_col]])
         }, error = function(e) {
+          if (verbose)
+            cat(sprintf("  [Fold failed] %s | formula: %s\n", conditionMessage(e), paste(deparse(fmla), collapse = " ")))
           warning("Fold failed: ", conditionMessage(e))
           c(RMSE = NA_real_, MAE = NA_real_, R2 = NA_real_)
         })

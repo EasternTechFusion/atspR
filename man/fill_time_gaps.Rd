@@ -10,6 +10,7 @@ fill_time_gaps(
   n = 1,
   unit = c("sec", "min", "hour", "day", "month", "quarter", "year"),
   tolerance = NULL,
+  format = NULL,
   verbose = TRUE
 )
 }
@@ -44,6 +45,15 @@ exact-match behavior (a timestamp must land exactly on the grid to
 count; otherwise it is left as-is and its grid slot is reported as a
 gap). Ignored (with a warning if non-\code{NULL}) for \code{"month"},
 \code{"quarter"}, and \code{"year"}.}
+
+\item{format}{Optional. Used only when \code{time_col} is \code{character}
+(e.g. read via base \code{read.csv()}, which never auto-detects dates).
+A \code{strptime()}-style format string (or vector of candidates to try
+in order), e.g. \code{"\\\%m/\\\%d/\\\%Y"}. When \code{NULL} (default), a set of
+common formats is tried automatically and the first one that parses
+every non-missing value without introducing new \code{NA}s is used. If
+none match, \code{fill_time_gaps()} aborts with guidance on how to
+convert the column yourself.}
 
 \item{verbose}{Logical (default \code{TRUE}).}
 }

@@ -15,6 +15,7 @@ cross_validate(
   lags = 1L,
   k = 5L,
   min_train_size = 0.2,
+  cor_threshold = 0.95,
   verbose = TRUE
 )
 }
@@ -78,6 +79,15 @@ fold). Default \code{1L}; set to \code{NULL} to disable.}
 \item{min_train_size}{Numeric in (0, 1).  Fraction of rows reserved as seed
 training data before folding begins.  Default \code{0.2} (20 \%).
 This ensures fold 1 always has training data available.}
+
+\item{cor_threshold}{Numeric in (0, 1] (default \code{0.95}). Before fitting any
+built-in model, predictors that duplicate information already in the set
+are dropped (per fold, keeping the earlier-listed column of each
+redundant pair): (1) any two columns whose values are a 1-to-1 relabeling
+of each other (e.g. \code{StationID} alongside \code{Station}) are always treated
+as redundant, regardless of type; (2) two numeric columns whose absolute
+Pearson correlation is at or above \code{cor_threshold} are also treated as
+redundant.}
 
 \item{verbose}{Logical (default \code{TRUE}).}
 }
