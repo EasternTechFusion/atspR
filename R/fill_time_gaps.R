@@ -36,9 +36,11 @@
 #'     \item `"month"`   - calendar months (1, 2, 3, ...)
 #'     \item `"quarter"` - calendar quarters of 3 months each (Q1, Q2, Q3, Q4)
 #'   }
-#'   Note: `"month"` and `"quarter"` require the timestamp column to be `Date`
-#'   and each value to fall on the first day of the month
-#'   (e.g. `2024-01-01`, `2024-04-01`).
+#'   Note: `"month"` and `"quarter"` require each value to fall on the
+#'   first day of the month (e.g. `2024-01-01`, `2024-04-01`). If the
+#'   timestamp column is `POSIXct`/`POSIXlt` (e.g. from `readxl::read_excel()`,
+#'   which always returns datetimes), it is auto-converted to `Date`
+#'   (time-of-day dropped) with a message.
 #' @param tolerance Numeric seconds, or `NULL`. Only used when
 #'   `unit \%in\% c("sec","min","hour","day")`. Maximum distance an observed
 #'   timestamp may sit from its nearest grid point and still be snapped to
@@ -163,12 +165,25 @@ fill_time_gaps <- function(data,
     ), time_col, class(ts)[1], time_col, time_col))
   }
 
-  # -- month/quarter require Date (not POSIXct) ------------------------------
+  # -- month/quarter require Date -> auto-convert from POSIXct/POSIXlt -------
+  # Common when data comes from read_excel(), which always returns
+  # datetime (POSIXct) even for date-only columns. Since "month"/"quarter"
+  # only care about the calendar date, drop the time-of-day silently.
   if (unit %in% c("month", "quarter") && !inherits(ts, "Date")) {
-    rlang::abort(paste0(
-      "unit = '", unit, "' requires a Date column, not POSIXct.\n",
-      "  Convert first: data$", time_col, " <- as.Date(data$", time_col, ")"
-    ))
+    if (inherits(ts, c("POSIXct", "POSIXlt"))) {
+      if (verbose)
+        message(sprintf(
+          "[INFO] Column '%s' was %s -> auto-converted to Date (time-of-day dropped) because unit = '%s'.",
+          time_col, class(ts)[1], unit
+        ))
+      ts             <- as.Date(ts)
+      data[[time_col]] <- ts
+    } else {
+      rlang::abort(paste0(
+        "unit = '", unit, "' requires a Date column, not ", class(ts)[1], ".\n",
+        "  Convert first: data$", time_col, " <- as.Date(data$", time_col, ")"
+      ))
+    }
   }
 
   # -- Only sec/min/hour/day have a fixed duration -> only these can snap ----
